@@ -4,16 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	
-    <groupId>com.ruoyi</groupId>
-    <artifactId>ruoyi</artifactId>
+    <groupId>com.zcst</groupId>
+    <artifactId>zcst</artifactId>
     <version>3.9.1</version>
 
-    <name>ruoyi</name>
+    <name>zcst</name>
     <url>http://www.ruoyi.vip</url>
-    <description>若依管理系统</description>
+    <description>一站式学生管理系统</description>
     
     <properties>
-        <ruoyi.version>3.9.1</ruoyi.version>
+        <zcst.version>3.9.1</zcst.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>17</java.version>
@@ -31,6 +31,7 @@
         <jwt.version>0.9.1</jwt.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
         <springdoc.version>3.0.2</springdoc.version>
+        <lombok.version>1.18.34</lombok.version>
     </properties>
 
     <!-- 依赖声明 -->
@@ -137,49 +138,65 @@
 
             <!-- 定时任务-->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-quartz</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.zcst</groupId>
+                <artifactId>zcst-quartz</artifactId>
+                <version>${zcst.version}</version>
             </dependency>
 
             <!-- 代码生成-->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-generator</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.zcst</groupId>
+                <artifactId>zcst-generator</artifactId>
+                <version>${zcst.version}</version>
             </dependency>
 
             <!-- 核心模块-->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-framework</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.zcst</groupId>
+                <artifactId>zcst-framework</artifactId>
+                <version>${zcst.version}</version>
             </dependency>
 
             <!-- 系统模块-->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-system</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.zcst</groupId>
+                <artifactId>zcst-system</artifactId>
+                <version>${zcst.version}</version>
             </dependency>
 
             <!-- 通用工具-->
             <dependency>
-                <groupId>com.ruoyi</groupId>
-                <artifactId>ruoyi-common</artifactId>
-                <version>${ruoyi.version}</version>
+                <groupId>com.zcst</groupId>
+                <artifactId>zcst-common</artifactId>
+                <version>${zcst.version}</version>
+            </dependency>
+
+            <!-- 业务管理模块-->
+            <dependency>
+                <groupId>com.zcst</groupId>
+                <artifactId>zcst-manage</artifactId>
+                <version>${zcst.version}</version>
+            </dependency>
+
+            <!-- Lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
             </dependency>
 
         </dependencies>
     </dependencyManagement>
 
     <modules>
-        <module>ruoyi-admin</module>
-        <module>ruoyi-framework</module>
-        <module>ruoyi-system</module>
-        <module>ruoyi-quartz</module>
-        <module>ruoyi-generator</module>
-        <module>ruoyi-common</module>
+        <module>zcst-admin</module>
+        <module>zcst-framework</module>
+        <module>zcst-system</module>
+        <module>zcst-quartz</module>
+        <module>zcst-generator</module>
+        <module>zcst-common</module>
+        <module>zcst-manage</module>
     </modules>
     <packaging>pom</packaging>
 
