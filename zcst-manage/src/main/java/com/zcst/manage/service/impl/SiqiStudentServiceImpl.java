@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.zcst.manage.mapper.SiqiStudentMapper;
+import com.zcst.manage.service.ISiqiStudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -15,94 +16,94 @@ import com.zcst.system.mapper.SysPostMapper;
 import com.zcst.system.domain.SysPost;
 
 /**
- * 学生管理Service业务层处理
- * 
+ * 思齐馆学生管理Service业务层处理
+ *
  * @author zcst
- * @date 2026-03-18
+ * @date 2026-03-19
  */
 @Service
-public class StudentServiceImpl implements IStudentService 
+public class SiqiStudentServiceImpl implements ISiqiStudentService
 {
     @Autowired
-    private StudentMapper studentMapper ;
+    private SiqiStudentMapper siqiStudentMapper;
     
     @Autowired
     private SysPostMapper sysPostMapper;
 
     /**
-     * 查询学生管理
-     * 
-     * @param studentId 学生管理主键
-     * @return 学生管理 VO
+     * 查询思齐馆学生管理
+     *
+     * @param studentId 思齐馆学生管理主键
+     * @return 思齐馆学生管理 VO
      */
     @Override
     public StudentVo selectStudentByStudentId(String studentId)
     {
-        Student student = studentMapper.selectStudentByStudentId(studentId);
+        Student student = siqiStudentMapper.selectStudentByStudentId(studentId);
         return convertToStudentVo(student);
     }
 
     /**
-     * 查询学生管理列表
-     * 
-     * @param student 学生管理
-     * @return 学生管理 VO
+     * 查询思齐馆学生管理列表
+     *
+     * @param student 思齐馆学生管理
+     * @return 思齐馆学生管理 VO
      */
     @Override
     public List<StudentVo> selectStudentList(Student student)
     {
-        List<Student> students = studentMapper.selectStudentList(student);
+        List<Student> students = siqiStudentMapper.selectStudentList(student);
         return students.stream()
                 .map(this::convertToStudentVo)
                 .collect(Collectors.toList());
     }
 
     /**
-     * 新增学生管理
-     * 
-     * @param student 学生管理
+     * 新增思齐馆学生管理
+     *
+     * @param student 思齐馆学生管理
      * @return 结果
      */
     @Override
     public int insertStudent(Student student)
     {
-        return studentMapper.insertStudent(student);
+        return siqiStudentMapper.insertStudent(student);
     }
 
     /**
-     * 修改学生管理
-     * 
-     * @param student 学生管理
+     * 修改思齐馆学生管理
+     *
+     * @param student 思齐馆学生管理
      * @return 结果
      */
     @Override
     public int updateStudent(Student student)
     {
-        return studentMapper.updateStudent(student);
+        return siqiStudentMapper.updateStudent(student);
     }
 
     /**
-     * 批量删除学生管理
-     * 
-     * @param studentIds 需要删除的学生管理主键
+     * 批量删除思齐馆学生管理
+     *
+     * @param studentIds 需要删除的思齐馆学生管理主键
      * @return 结果
      */
     @Override
     public int deleteStudentByStudentIds(String[] studentIds)
     {
-        return studentMapper.deleteStudentByStudentIds(studentIds);
+        return siqiStudentMapper.deleteStudentByStudentIds(studentIds);
     }
 
     /**
-     * 删除学生管理信息
-     * 
-     * @param studentId 学生管理主键
+     * 删除思齐馆学生管理信息
+     *
+     * @param studentId 思齐馆学生管理主键
      * @return 结果
      */
     @Override
     public int deleteStudentByStudentId(String studentId)
     {
-        return studentMapper.deleteStudentByStudentId(studentId);
+        return siqiStudentMapper.deleteStudentByStudentId(studentId);
     }
     
     /**

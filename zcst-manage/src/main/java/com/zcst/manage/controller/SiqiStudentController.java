@@ -1,6 +1,8 @@
 package com.zcst.manage.controller;
 
 import java.util.List;
+
+import com.zcst.manage.service.ISiqiStudentService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,83 +25,83 @@ import com.zcst.common.utils.poi.ExcelUtil;
 import com.zcst.common.core.page.TableDataInfo;
 
 /**
- * 学生管理Controller
- * 
+ * 思齐馆学生管理Controller
+ *
  * @author zcst
- * @date 2026-03-18
+ * @date 2026-03-19
  */
 @RestController
-@RequestMapping("/manage/student")
-public class StudentController extends BaseController
+@RequestMapping("/manage/siqiStudent")
+public class SiqiStudentController extends BaseController
 {
     @Autowired
-    private IStudentService studentService;
+    private ISiqiStudentService siqiStudentService;
 
     /**
-     * 查询学生管理列表
+     * 查询思齐馆学生管理列表
      */
-    @PreAuthorize("@ss.hasPermi('manage:student:list')")
+    @PreAuthorize("@ss.hasPermi('manage:siqiStudent:list')")
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
         startPage();
-        List<StudentVo> list = studentService.selectStudentList(student);
+        List<StudentVo> list = siqiStudentService.selectStudentList(student);
         return getDataTable(list);
     }
 
     /**
-     * 导出学生管理列表
+     * 导出思齐馆学生管理列表
      */
-    @PreAuthorize("@ss.hasPermi('manage:student:export')")
-    @Log(title = "学生管理", businessType = BusinessType.EXPORT)
+    @PreAuthorize("@ss.hasPermi('manage:siqiStudent:export')")
+    @Log(title = "思齐馆学生管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Student student)
     {
-        List<StudentVo> list = studentService.selectStudentList(student);
+        List<StudentVo> list = siqiStudentService.selectStudentList(student);
         ExcelUtil<StudentVo> util = new ExcelUtil<StudentVo>(StudentVo.class);
-        util.exportExcel(response, list, "学生管理数据");
+        util.exportExcel(response, list, "思齐馆学生管理数据");
     }
 
     /**
-     * 获取学生管理详细信息
+     * 获取思齐馆学生管理详细信息
      */
-    @PreAuthorize("@ss.hasPermi('manage:student:query')")
+    @PreAuthorize("@ss.hasPermi('manage:siqiStudent:query')")
     @GetMapping(value = "/{studentId}")
     public AjaxResult getInfo(@PathVariable("studentId") String studentId)
     {
-        return success(studentService.selectStudentByStudentId(studentId));
+        return success(siqiStudentService.selectStudentByStudentId(studentId));
     }
 
     /**
-     * 新增学生管理
+     * 新增思齐馆学生管理
      */
-    @PreAuthorize("@ss.hasPermi('manage:student:add')")
-    @Log(title = "学生管理", businessType = BusinessType.INSERT)
+    @PreAuthorize("@ss.hasPermi('manage:siqiStudent:add')")
+    @Log(title = "思齐馆学生管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Student student)
     {
-        return toAjax(studentService.insertStudent(student));
+        return toAjax(siqiStudentService.insertStudent(student));
     }
 
     /**
-     * 修改学生管理
+     * 修改思齐馆学生管理
      */
-    @PreAuthorize("@ss.hasPermi('manage:student:edit')")
-    @Log(title = "学生管理", businessType = BusinessType.UPDATE)
+    @PreAuthorize("@ss.hasPermi('manage:siqiStudent:edit')")
+    @Log(title = "思齐馆学生管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Student student)
     {
-        return toAjax(studentService.updateStudent(student));
+        return toAjax(siqiStudentService.updateStudent(student));
     }
 
     /**
-     * 删除学生管理
+     * 删除思齐馆学生管理
      */
-    @PreAuthorize("@ss.hasPermi('manage:student:remove')")
-    @Log(title = "学生管理", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{studentIds}")
+    @PreAuthorize("@ss.hasPermi('manage:siqiStudent:remove')")
+    @Log(title = "思齐馆学生管理", businessType = BusinessType.DELETE)
+    @DeleteMapping("/{studentIds}")
     public AjaxResult remove(@PathVariable String[] studentIds)
     {
-        return toAjax(studentService.deleteStudentByStudentIds(studentIds));
+        return toAjax(siqiStudentService.deleteStudentByStudentIds(studentIds));
     }
 }

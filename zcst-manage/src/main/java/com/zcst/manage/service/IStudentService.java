@@ -2,6 +2,7 @@ package com.zcst.manage.service;
 
 import java.util.List;
 import com.zcst.manage.domain.Student;
+import com.zcst.manage.domain.Vo.StudentVo;
 
 /**
  * 学生管理Service接口
@@ -15,17 +16,17 @@ public interface IStudentService
      * 查询学生管理
      * 
      * @param studentId 学生管理主键
-     * @return 学生管理
+     * @return 学生管理 VO
      */
-    public Student selectStudentByStudentId(String studentId);
+    public StudentVo selectStudentByStudentId(String studentId);
 
     /**
      * 查询学生管理列表
      * 
      * @param student 学生管理
-     * @return 学生管理集合
+     * @return 学生管理 VO 集合
      */
-    public List<Student> selectStudentList(Student student);
+    public List<StudentVo> selectStudentList(Student student);
 
     /**
      * 新增学生管理
