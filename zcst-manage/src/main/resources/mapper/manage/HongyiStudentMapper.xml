@@ -24,14 +24,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectStudentList" parameterType="Student" resultMap="StudentResult">
         <include refid="selectStudentVo"/>
         <where>
-            and venue_id = 2
+            venue_id = #{venueId}
             <if test="studentId != null  and studentId != ''"> and student_id = #{studentId}</if>
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
             <if test="gender != null  and gender != ''"> and gender = #{gender}</if>
             <if test="majorId != null "> and major_id = #{majorId}</if>
             <if test="grade != null  and grade != ''"> and grade = #{grade}</if>
             <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
-            <if test="venueId != null "> and venue_id = #{venueId}</if>
             <if test="password != null  and password != ''"> and password = #{password}</if>
             <if test="createdAt != null "> and created_at = #{createdAt}</if>
             <if test="updatedAt != null "> and updated_at = #{updatedAt}</if>

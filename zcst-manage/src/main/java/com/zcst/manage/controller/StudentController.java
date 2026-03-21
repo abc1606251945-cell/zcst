@@ -16,8 +16,10 @@ import com.zcst.common.annotation.Log;
 import com.zcst.common.core.controller.BaseController;
 import com.zcst.common.core.domain.AjaxResult;
 import com.zcst.common.enums.BusinessType;
+import com.github.pagehelper.PageInfo;
 import com.zcst.manage.domain.Student;
 import com.zcst.manage.domain.Vo.StudentVo;
+import com.zcst.manage.mapper.StudentMapper;
 import com.zcst.manage.service.IStudentService;
 import com.zcst.common.utils.poi.ExcelUtil;
 import com.zcst.common.core.page.TableDataInfo;
@@ -34,6 +36,9 @@ public class StudentController extends BaseController
 {
     @Autowired
     private IStudentService studentService;
+    
+    @Autowired
+    private StudentMapper studentMapper;
 
     /**
      * 查询学生管理列表
@@ -43,8 +48,8 @@ public class StudentController extends BaseController
     public TableDataInfo list(Student student)
     {
         startPage();
-        List<StudentVo> list = studentService.selectStudentList(student);
-        return getDataTable(list);
+        PageInfo<StudentVo> pageInfo = studentService.selectStudentListWithPage(student);
+        return getDataTable(pageInfo.getList(), pageInfo.getTotal());
     }
 
     /**
@@ -78,6 +83,10 @@ public class StudentController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody Student student)
     {
+        // 检查学号是否已存在
+        if (studentMapper.selectStudentByStudentId(student.getStudentId()) != null) {
+            return AjaxResult.error("学号已存在，请重新输入");
+        }
         return toAjax(studentService.insertStudent(student));
     }
 
@@ -101,5 +110,28 @@ public class StudentController extends BaseController
     public AjaxResult remove(@PathVariable String[] studentIds)
     {
         return toAjax(studentService.deleteStudentByStudentIds(studentIds));
+    }
+
+    /**
+     * 获取当前学生信息
+     */
+    @GetMapping("/info")
+    public AjaxResult getStudentInfo()
+    {
+        // 获取当前登录用户的学号
+        String studentId = getUsername();
+        return success(studentService.selectStudentByStudentId(studentId));
+    }
+
+    /**
+     * 更新当前学生信息
+     */
+    @PutMapping("/info")
+    public AjaxResult updateStudentInfo(@RequestBody Student student)
+    {
+        // 获取当前登录用户的学号
+        String studentId = getUsername();
+        student.setStudentId(studentId);
+        return toAjax(studentService.updateStudent(student));
     }
 }

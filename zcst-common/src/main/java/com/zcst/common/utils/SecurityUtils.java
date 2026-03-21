@@ -110,8 +110,24 @@ public class SecurityUtils
      */
     public static boolean matchesPassword(String rawPassword, String encodedPassword)
     {
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        return passwordEncoder.matches(rawPassword, encodedPassword);
+        // 处理空值情况
+        if (rawPassword == null || encodedPassword == null) {
+            return false;
+        }
+        
+        try {
+            // 检查密码是否已经加密（BCrypt加密的特征是以$2a$开头）
+            if (encodedPassword.startsWith("$2a$")) {
+                BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+                return passwordEncoder.matches(rawPassword, encodedPassword);
+            } else {
+                // 明文密码直接比较
+                return rawPassword.equals(encodedPassword);
+            }
+        } catch (Exception e) {
+            // 如果密码格式错误，尝试直接比较
+            return rawPassword.equals(encodedPassword);
+        }
     }
 
     /**

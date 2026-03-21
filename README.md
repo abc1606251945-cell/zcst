@@ -1,115 +1,337 @@
-<p align="center">
-	<img alt="logo" src="https://oscimg.oschina.net/oscnet/up-d3d0a9303e11d522a06cd263f3079027715.png">
-</p>
-<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">RuoYi v3.9.1</h1>
-<h4 align="center">基于SpringBoot+Vue前后端分离的Java快速开发框架</h4>
-<p align="center">
-	<a href="https://gitee.com/y_project/RuoYi-Vue/stargazers"><img src="https://gitee.com/y_project/RuoYi-Vue/badge/star.svg?theme=dark"></a>
-	<a href="https://gitee.com/y_project/RuoYi-Vue"><img src="https://img.shields.io/badge/RuoYi-v3.9.1-brightgreen.svg"></a>
-	<a href="https://gitee.com/y_project/RuoYi-Vue/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
-</p>
+# zcst-b 后端项目文档
 
-## 平台简介
+## 项目简介
 
-若依是一套全部开源的快速开发平台，毫无保留给个人及企业免费使用。
+zcst-b 是一个基于 Spring Boot 的学生管理系统后端项目，提供了完整的 RESTful API 接口，支持学生信息管理、场地管理、用户管理等业务功能。该项目采用模块化设计，具有良好的可扩展性和可维护性。
 
-* 前端采用Vue、Element UI。
-* 后端采用Spring Boot、Spring Security、Redis & Jwt。
-* 权限认证使用Jwt，支持多终端认证系统。
-* 支持加载动态权限菜单，多方式轻松权限控制。
-* 高效率开发，使用代码生成器可以一键生成前后端代码。
-* 阿里云折扣场：[点我进入](http://aly.ruoyi.vip)，腾讯云秒杀场：[点我进入](http://txy.ruoyi.vip)&nbsp;&nbsp;
+## 技术架构
 
-# 版本分支
+### 后端技术栈
 
-RuoYi-Vue 后端项目提供 Spring Boot 2.x / 3.x / 4.x 多版本分支的并行维护。
+| 技术/框架 | 版本 | 用途 |
+| :--- | :--- | :--- |
+| Spring Boot | 4.0.3 | 后端核心框架 |
+| Spring Security | 内置 | 安全框架 |
+| MyBatis | 4.0.1 | ORM 框架 |
+| Druid | 1.2.28 | 数据库连接池 |
+| JWT | 0.9.1 | 认证令牌 |
+| MySQL | - | 数据库 |
+| Redis | - | 缓存 |
+| SpringDoc | 3.0.2 | API 文档 |
+| Lombok | 1.18.34 | 代码简化工具 |
 
-| 名称              | 说明                      | 地址                                                    |
-| :---------------- | :------------------------ | :------------------------------------------------------ |
-| master 默认分支   | Spring Boot 4.x (JDK 17+) | https://gitee.com/y_project/RuoYi-Vue                   |
-| springboot3 分支  | Spring Boot 3.x (JDK 17+) | https://gitee.com/y_project/RuoYi-Vue/tree/springboot3  |
-| springboot2 分支  | Spring Boot 2.x (JDK 8+)  | https://gitee.com/y_project/RuoYi-Vue/tree/springboot2  |  
+### 项目结构
 
-RuoYi-Vue 前端项目提供 Vue 2.x / 3.x / JavaScript TypeScript 版本均可混用搭配
+```
+zcst-b/
+├── zcst-admin/            # 管理后台模块
+│   └── src/main/java/com/zcst/web/  # 控制器层
+├── zcst-common/           # 通用模块
+│   └── src/main/java/com/zcst/common/  # 通用工具和常量
+├── zcst-framework/        # 框架模块
+│   └── src/main/java/com/zcst/framework/  # 核心配置和安全框架
+├── zcst-generator/        # 代码生成模块
+│   └── src/main/java/com/zcst/generator/  # 代码生成功能
+├── zcst-manage/           # 业务管理模块
+│   └── src/main/java/com/zcst/manage/  # 业务逻辑实现
+├── zcst-quartz/           # 定时任务模块
+│   └── src/main/java/com/zcst/quartz/  # 定时任务管理
+├── zcst-system/           # 系统管理模块
+│   └── src/main/java/com/zcst/system/  # 系统功能实现
+├── sql/                   # 数据库脚本
+└── pom.xml                # Maven 配置文件
+```
 
-| 项目名称      | **RuoYi-Vue** | **RuoYi-Vue3** | **RuoYi-Vue3-TypeScript**   |
-| :---          | :---          | :---           | :---                        |
-| **前端框架**  | Vue 2        | Vue 3          | Vue 3                       |
-| **脚本语言**  | JavaScript   | JavaScript     | TypeScript                  |
-| **构建工具**  | Vue CLI      | Vite           | Vite                        |
-| **UI 组件库** | Element UI   | Element Plus   | Element Plus                |
-| **状态管理**  | Vuex         | Pinia          | Pinia                       |
-| **路由管理**  | Vue Router 3 | Vue Router 4   | Vue Router 4                |
-| **核心特点**  | 1. 技术栈经典稳定<br>2. 社区资料丰富<br>3. 当前维护重心已转移 | 1. 现代前端技术栈<br>2. 开发体验与性能更优<br>3. 官方主推的活跃版本 | 1. 类型加持，减少沟通成本<br>2. 开发时有提示，效率更高<br>3. 多人协作企业级开发项目 |
-| **仓库地址**  | [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) | [RuoYi-Vue3](https://gitcode.com/yangzongzhuan/RuoYi-Vue3) | [RuoYi-Vue3-TypeScript](https://gitcode.com/yangzongzhuan/RuoYi-Vue3/tree/typescript) |
+## 功能模块
 
-## 内置功能
+### 1. 系统管理
 
-1.  用户管理：用户是系统操作者，该功能主要完成系统用户配置。
-2.  部门管理：配置系统组织机构（公司、部门、小组），树结构展现支持数据权限。
-3.  岗位管理：配置系统用户所属担任职务。
-4.  菜单管理：配置系统菜单，操作权限，按钮权限标识等。
-5.  角色管理：角色菜单权限分配、设置角色按机构进行数据范围权限划分。
-6.  字典管理：对系统中经常使用的一些较为固定的数据进行维护。
-7.  参数管理：对系统动态配置常用参数。
-8.  通知公告：系统通知公告信息发布维护。
-9.  操作日志：系统正常操作日志记录和查询；系统异常信息日志记录和查询。
-10. 登录日志：系统登录日志记录查询包含登录异常。
-11. 在线用户：当前系统中活跃用户状态监控。
-12. 定时任务：在线（添加、修改、删除)任务调度包含执行结果日志。
-13. 代码生成：前后端代码的生成（java、html、xml、sql）支持CRUD下载 。
-14. 系统接口：根据业务代码自动生成相关的api接口文档。
-15. 服务监控：监视当前系统CPU、内存、磁盘、堆栈等相关信息。
-16. 缓存监控：对系统的缓存信息查询，命令统计等。
-17. 在线构建器：拖动表单元素生成相应的HTML代码。
-18. 连接池监视：监视当前系统数据库连接池状态，可进行分析SQL找出系统性能瓶颈。
+- **用户管理**：用户信息的增删改查，支持用户状态管理和密码重置
+- **部门管理**：组织机构的树状展示和管理
+- **岗位管理**：岗位信息的维护
+- **菜单管理**：系统菜单的配置，支持权限控制
+- **角色管理**：角色的创建和权限分配
+- **字典管理**：系统字典数据的维护
+- **参数管理**：系统参数的配置
+- **通知公告**：系统通知的发布和管理
 
-## 在线体验
+### 2. 监控管理
 
-- admin/admin123  
-- 陆陆续续收到一些打赏，为了更好的体验已用于演示服务器升级。谢谢各位小伙伴。
+- **操作日志**：系统操作记录的查询和分析
+- **登录日志**：用户登录记录的查询和分析
+- **在线用户**：当前在线用户的监控
+- **定时任务**：任务调度的管理和执行日志
+- **服务监控**：系统资源使用情况的监控
+- **缓存监控**：缓存信息的查询和管理
 
-演示地址：http://vue.ruoyi.vip  
-文档地址：http://doc.ruoyi.vip
+### 3. 业务管理
 
-## 演示图
+- **学生管理**：学生信息的增删改查和管理
+- **场地管理**：场地信息的维护和管理
+- **学校学生管理**：各学校学生的专门管理（如笃学、国防、弘毅、思齐、新源、知行等）
 
-<table>
-    <tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/cd1f90be5f2684f4560c9519c0f2a232ee8.jpg"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/1cbcf0e6f257c7d3a063c0e3f2ff989e4b3.jpg"/></td>
-    </tr>
-    <tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-8074972883b5ba0622e13246738ebba237a.png"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-9f88719cdfca9af2e58b352a20e23d43b12.png"/></td>
-    </tr>
-    <tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-39bf2584ec3a529b0d5a3b70d15c9b37646.png"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-936ec82d1f4872e1bc980927654b6007307.png"/></td>
-    </tr>
-	<tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-b2d62ceb95d2dd9b3fbe157bb70d26001e9.png"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-d67451d308b7a79ad6819723396f7c3d77a.png"/></td>
-    </tr>	 
-    <tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/5e8c387724954459291aafd5eb52b456f53.jpg"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/644e78da53c2e92a95dfda4f76e6d117c4b.jpg"/></td>
-    </tr>
-	<tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-8370a0d02977eebf6dbf854c8450293c937.png"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-49003ed83f60f633e7153609a53a2b644f7.png"/></td>
-    </tr>
-	<tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-d4fe726319ece268d4746602c39cffc0621.png"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-c195234bbcd30be6927f037a6755e6ab69c.png"/></td>
-    </tr>
-    <tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/b6115bc8c31de52951982e509930b20684a.jpg"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-5e4daac0bb59612c5038448acbcef235e3a.png"/></td>
-    </tr>
-</table>
+### 4. 工具管理
 
+- **代码生成**：前后端代码的自动生成
 
-## 若依前后端分离交流群
+### 5. 注册功能
 
-QQ群： [![加入QQ群](https://img.shields.io/badge/已满-937441-blue.svg)](https://jq.qq.com/?_wv=1027&k=5bVB1og) [![加入QQ群](https://img.shields.io/badge/已满-887144332-blue.svg)](https://jq.qq.com/?_wv=1027&k=5eiA4DH) [![加入QQ群](https://img.shields.io/badge/已满-180251782-blue.svg)](https://jq.qq.com/?_wv=1027&k=5AxMKlC) [![加入QQ群](https://img.shields.io/badge/已满-104180207-blue.svg)](https://jq.qq.com/?_wv=1027&k=51G72yr) [![加入QQ群](https://img.shields.io/badge/已满-186866453-blue.svg)](https://jq.qq.com/?_wv=1027&k=VvjN2nvu) [![加入QQ群](https://img.shields.io/badge/已满-201396349-blue.svg)](https://jq.qq.com/?_wv=1027&k=5vYAqA05) [![加入QQ群](https://img.shields.io/badge/已满-101456076-blue.svg)](https://jq.qq.com/?_wv=1027&k=kOIINEb5) [![加入QQ群](https://img.shields.io/badge/已满-101539465-blue.svg)](https://jq.qq.com/?_wv=1027&k=UKtX5jhs) [![加入QQ群](https://img.shields.io/badge/已满-264312783-blue.svg)](https://jq.qq.com/?_wv=1027&k=EI9an8lJ) [![加入QQ群](https://img.shields.io/badge/已满-167385320-blue.svg)](https://jq.qq.com/?_wv=1027&k=SWCtLnMz) [![加入QQ群](https://img.shields.io/badge/已满-104748341-blue.svg)](https://jq.qq.com/?_wv=1027&k=96Dkdq0k) [![加入QQ群](https://img.shields.io/badge/已满-160110482-blue.svg)](https://jq.qq.com/?_wv=1027&k=0fsNiYZt) [![加入QQ群](https://img.shields.io/badge/已满-170801498-blue.svg)](https://jq.qq.com/?_wv=1027&k=7xw4xUG1) [![加入QQ群](https://img.shields.io/badge/已满-108482800-blue.svg)](https://jq.qq.com/?_wv=1027&k=eCx8eyoJ) [![加入QQ群](https://img.shields.io/badge/已满-101046199-blue.svg)](https://jq.qq.com/?_wv=1027&k=SpyH2875) [![加入QQ群](https://img.shields.io/badge/已满-136919097-blue.svg)](https://jq.qq.com/?_wv=1027&k=tKEt51dz) [![加入QQ群](https://img.shields.io/badge/已满-143961921-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=0vBbSb0ztbBgVtn3kJS-Q4HUNYwip89G&authKey=8irq5PhutrZmWIvsUsklBxhj57l%2F1nOZqjzigkXZVoZE451GG4JHPOqW7AW6cf0T&noverify=0&group_code=143961921) [![加入QQ群](https://img.shields.io/badge/已满-174951577-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=ZFAPAbp09S2ltvwrJzp7wGlbopsc0rwi&authKey=HB2cxpxP2yspk%2Bo3WKTBfktRCccVkU26cgi5B16u0KcAYrVu7sBaE7XSEqmMdFQp&noverify=0&group_code=174951577) [![加入QQ群](https://img.shields.io/badge/已满-161281055-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=Fn2aF5IHpwsy8j6VlalNJK6qbwFLFHat&authKey=uyIT%2B97x2AXj3odyXpsSpVaPMC%2Bidw0LxG5MAtEqlrcBcWJUA%2FeS43rsF1Tg7IRJ&noverify=0&group_code=161281055) [![加入QQ群](https://img.shields.io/badge/已满-138988063-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=XIzkm_mV2xTsUtFxo63bmicYoDBA6Ifm&authKey=dDW%2F4qsmw3x9govoZY9w%2FoWAoC4wbHqGal%2BbqLzoS6VBarU8EBptIgPKN%2FviyC8j&noverify=0&group_code=138988063) [![加入QQ群](https://img.shields.io/badge/已满-151450850-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=DkugnCg68PevlycJSKSwjhFqfIgrWWwR&authKey=pR1Pa5lPIeGF%2FFtIk6d%2FGB5qFi0EdvyErtpQXULzo03zbhopBHLWcuqdpwY241R%2F&noverify=0&group_code=151450850) [![加入QQ群](https://img.shields.io/badge/已满-224622315-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=F58bgRa-Dp-rsQJThiJqIYv8t4-lWfXh&authKey=UmUs4CVG5OPA1whvsa4uSespOvyd8%2FAr9olEGaWAfdLmfKQk%2FVBp2YU3u2xXXt76&noverify=0&group_code=224622315) [![加入QQ群](https://img.shields.io/badge/已满-287842588-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=Nxb2EQ5qozWa218Wbs7zgBnjLSNk_tVT&authKey=obBKXj6SBKgrFTJZx0AqQnIYbNOvBB2kmgwWvGhzxR67RoRr84%2Bus5OadzMcdJl5&noverify=0&group_code=287842588) [![加入QQ群](https://img.shields.io/badge/已满-187944233-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=numtK1M_I4eVd2Gvg8qtbuL8JgX42qNh&authKey=giV9XWMaFZTY%2FqPlmWbkB9g3fi0Ev5CwEtT9Tgei0oUlFFCQLDp4ozWRiVIzubIm&noverify=0&group_code=187944233) [![加入QQ群](https://img.shields.io/badge/已满-228578329-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=G6r5KGCaa3pqdbUSXNIgYloyb8e0_L0D&authKey=4w8tF1eGW7%2FedWn%2FHAypQksdrML%2BDHolQSx7094Agm7Luakj9EbfPnSTxSi2T1LQ&noverify=0&group_code=228578329) [![加入QQ群](https://img.shields.io/badge/已满-191164766-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=GsOo-OLz53J8y_9TPoO6XXSGNRTgbFxA&authKey=R7Uy%2Feq%2BZsoKNqHvRKhiXpypW7DAogoWapOawUGHokJSBIBIre2%2FoiAZeZBSLuBc&noverify=0&group_code=191164766) [![加入QQ群](https://img.shields.io/badge/已满-174569686-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=PmYavuzsOthVqfdAPbo4uAeIbu7Ttjgc&authKey=p52l8%2FXa4PS1JcEmS3VccKSwOPJUZ1ZfQ69MEKzbrooNUljRtlKjvsXf04bxNp3G&noverify=0&group_code=174569686) [![加入QQ群](https://img.shields.io/badge/127358632-blue.svg)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=M9y5NjAl44lAL_Vh2crmEehZU_PMU6KS&authKey=ZSDz8hEREWSaPuxQV3gEwqGIaGjfRNnkB4rJjf0IvXhrSUGSGwQFmBA%2Boe8HFxyl&noverify=0&group_code=127358632) 点击按钮入群。
+- **学生注册**：学生用户的注册流程
+- **管理员注册**：管理员用户的注册流程
+
+## 接口规范
+
+### API 接口格式
+
+所有 API 接口都遵循 RESTful 设计规范，使用 JSON 格式进行数据交换。
+
+### 接口地址
+
+接口基础路径：`/api`
+
+### 响应格式
+
+```json
+{
+  "code": 200,
+  "msg": "操作成功",
+  "data": {
+    // 响应数据
+  }
+}
+```
+
+### 状态码说明
+
+| 状态码 | 说明 |
+| :--- | :--- |
+| 200 | 操作成功 |
+| 400 | 请求参数错误 |
+| 401 | 未授权 |
+| 403 | 权限不足 |
+| 404 | 资源不存在 |
+| 500 | 服务器内部错误 |
+
+## 核心业务流程
+
+### 1. 用户认证流程
+
+1. 用户发送登录请求，携带用户名和密码
+2. 后端验证用户名和密码
+3. 生成 JWT token
+4. 返回 token 和用户信息
+5. 前端存储 token，后续请求携带 token
+6. 后端验证 token 有效性
+
+### 2. 学生注册流程
+
+1. 学生提交注册信息
+2. 后端验证注册信息
+3. 创建用户账号
+4. 保存学生信息
+5. 返回注册结果
+
+### 3. 学生信息管理流程
+
+1. 管理员登录系统
+2. 进入学生管理页面
+3. 查询学生列表
+4. 添加/编辑/删除学生信息
+5. 后端处理请求，更新数据库
+6. 返回操作结果
+
+## 数据库设计
+
+### 主要表结构
+
+#### 用户表 (`sys_user`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `user_id` | `BIGINT` | 用户ID |
+| `dept_id` | `BIGINT` | 部门ID |
+| `username` | `VARCHAR(30)` | 用户名 |
+| `nickname` | `VARCHAR(30)` | 昵称 |
+| `password` | `VARCHAR(100)` | 密码 |
+| `status` | `CHAR(1)` | 状态 |
+| `create_time` | `DATETIME` | 创建时间 |
+
+#### 学生表 (`student`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `id` | `BIGINT` | 学生ID |
+| `name` | `VARCHAR(50)` | 姓名 |
+| `gender` | `CHAR(1)` | 性别 |
+| `age` | `INT` | 年龄 |
+| `school` | `VARCHAR(100)` | 学校 |
+| `create_time` | `DATETIME` | 创建时间 |
+
+#### 场地表 (`venue`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `id` | `BIGINT` | 场地ID |
+| `name` | `VARCHAR(100)` | 场地名称 |
+| `address` | `VARCHAR(200)` | 地址 |
+| `capacity` | `INT` | 容量 |
+| `status` | `CHAR(1)` | 状态 |
+| `create_time` | `DATETIME` | 创建时间 |
+
+## 开发指南
+
+### 环境搭建
+
+1. 克隆项目
+
+```bash
+git clone <项目地址>
+cd zcst-b
+```
+
+2. 配置数据库
+
+- 创建数据库 `zcst`
+- 执行 `sql` 目录下的初始化脚本
+
+3. 配置 application.yml
+
+修改 `zcst-admin/src/main/resources/application.yml` 文件，配置数据库连接信息。
+
+4. 编译项目
+
+```bash
+mvn clean install
+```
+
+5. 运行项目
+
+```bash
+mvn spring-boot:run -pl zcst-admin
+```
+
+### 代码规范
+
+- 使用 Java 17 语法
+- 类名使用 PascalCase
+- 方法名和变量名使用 camelCase
+- 常量名使用 UPPER_CASE
+- 缩进使用 4 个空格
+- 每行代码长度不超过 120 个字符
+- 使用 Lombok 简化代码
+
+### 目录规范
+
+- `controller/`：控制器层，处理 HTTP 请求
+- `service/`：服务层，实现业务逻辑
+- `mapper/`：数据访问层，操作数据库
+- `domain/`：领域模型，定义实体类
+- `utils/`：工具类
+- `config/`：配置类
+
+## API 文档
+
+项目使用 SpringDoc 生成 API 文档，访问地址：
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+## 部署指南
+
+### 打包
+
+```bash
+mvn clean package -DskipTests
+```
+
+### 运行
+
+```bash
+java -jar zcst-admin/target/zcst-admin.jar
+```
+
+### 环境变量
+
+| 环境变量 | 描述 | 默认值 |
+| :--- | :--- | :--- |
+| `SERVER_PORT` | 服务端口 | 8080 |
+| `DATABASE_URL` | 数据库连接地址 | jdbc:mysql://localhost:3306/zcst |
+| `DATABASE_USERNAME` | 数据库用户名 | root |
+| `DATABASE_PASSWORD` | 数据库密码 | 123456 |
+| `REDIS_HOST` | Redis 主机 | localhost |
+| `REDIS_PORT` | Redis 端口 | 6379 |
+
+## 常见问题
+
+### 1. 数据库连接失败
+
+- 检查数据库服务是否运行
+- 检查数据库连接配置是否正确
+- 检查数据库用户权限是否足够
+
+### 2. 启动失败
+
+- 检查端口是否被占用
+- 检查依赖是否完整
+- 检查配置文件是否正确
+
+### 3. API 调用失败
+
+- 检查请求参数是否正确
+- 检查用户权限是否足够
+- 检查后端服务是否运行
+
+## 性能优化
+
+1. **数据库优化**：使用索引，优化 SQL 语句
+2. **缓存优化**：合理使用 Redis 缓存
+3. **代码优化**：减少不必要的计算和 IO 操作
+4. **并发优化**：合理使用线程池
+
+## 安全措施
+
+1. **认证授权**：使用 JWT 进行身份认证，基于角色的权限控制
+2. **输入验证**：对所有输入进行验证，防止 SQL 注入和 XSS 攻击
+3. **加密处理**：对敏感数据进行加密存储
+4. **日志记录**：记录系统操作日志，便于审计和排查问题
+
+## 项目维护
+
+### 版本管理
+
+使用 Git 进行版本管理，遵循以下分支规范：
+
+- `master`：主分支，用于发布生产版本
+- `dev`：开发分支，用于集成新功能
+- `feat/xxx`：功能分支，用于开发具体功能
+- `fix/xxx`：修复分支，用于修复 bug
+
+### 代码提交规范
+
+提交信息格式：
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+其中 `type` 可以是：
+
+- `feat`：新功能
+- `fix`：修复 bug
+- `docs`：文档更新
+- `style`：代码风格修改
+- `refactor`：代码重构
+- `test`：测试代码
+- `chore`：构建过程或辅助工具的变动
+
+## 联系方式
+
+- 项目负责人：XXX
+- 技术支持：XXX
+- 邮箱：XXX
+- 电话：XXX

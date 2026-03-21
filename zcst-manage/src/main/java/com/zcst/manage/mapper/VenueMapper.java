@@ -2,6 +2,7 @@ package com.zcst.manage.mapper;
 
 import java.util.List;
 import com.zcst.manage.domain.Venue;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
  * 场馆信息管理Mapper接口
@@ -9,6 +10,7 @@ import com.zcst.manage.domain.Venue;
  * @author ji
  * @date 2026-03-19
  */
+@Mapper
 public interface VenueMapper 
 {
     /**

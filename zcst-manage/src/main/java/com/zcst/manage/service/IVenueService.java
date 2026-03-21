@@ -1,6 +1,7 @@
 package com.zcst.manage.service;
 
 import java.util.List;
+import com.github.pagehelper.PageInfo;
 import com.zcst.manage.domain.Venue;
 
 /**
@@ -26,6 +27,14 @@ public interface IVenueService
      * @return 场馆信息管理集合
      */
     public List<Venue> selectVenueList(Venue venue);
+    
+    /**
+     * 查询场馆信息管理列表（带分页信息）
+     * 
+     * @param venue 场馆信息管理
+     * @return 包含分页信息的场馆信息管理列表
+     */
+    public PageInfo<Venue> selectVenueListWithPage(Venue venue);
 
     /**
      * 新增场馆信息管理

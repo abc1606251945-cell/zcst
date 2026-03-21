@@ -44,9 +44,7 @@ public class SiqiStudentController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
-        startPage();
-        List<StudentVo> list = siqiStudentService.selectStudentList(student);
-        return getDataTable(list);
+        return getDataTable(siqiStudentService.selectStudentListWithPage(student));
     }
 
     /**

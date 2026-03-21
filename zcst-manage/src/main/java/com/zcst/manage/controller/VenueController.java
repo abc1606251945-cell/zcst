@@ -41,9 +41,7 @@ public class VenueController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Venue venue)
     {
-        startPage();
-        List<Venue> list = venueService.selectVenueList(venue);
-        return getDataTable(list);
+        return getDataTable(venueService.selectVenueListWithPage(venue));
     }
 
     /**

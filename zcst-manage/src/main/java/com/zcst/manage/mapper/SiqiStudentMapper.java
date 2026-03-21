@@ -1,6 +1,7 @@
 package com.zcst.manage.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import com.zcst.manage.domain.Student;
 
 /**
@@ -9,6 +10,7 @@ import com.zcst.manage.domain.Student;
  * @author zcst
  * @date 2026-03-19
  */
+@Mapper
 public interface SiqiStudentMapper
 {
     /**

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.GuofangStudentMapper">
+    
+    <resultMap type="Student" id="StudentResult">
+        <result property="studentId"    column="student_id"    />
+        <result property="name"    column="name"    />
+        <result property="gender"    column="gender"    />
+        <result property="majorId"    column="major_id"    />
+        <result property="grade"    column="grade"    />
+        <result property="phone"    column="phone"    />
+        <result property="venueId"    column="venue_id"    />
+        <result property="password"    column="password"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="updatedAt"    column="updated_at"    />
+    </resultMap>
+
+    <sql id="selectStudentVo">
+        select student_id, name, gender, major_id, grade, phone, venue_id, password, created_at, updated_at from student
+    </sql>
+
+    <select id="selectStudentList" parameterType="Student" resultMap="StudentResult">
+        <include refid="selectStudentVo"/>
+        <where>
+            venue_id = #{venueId}
+            <if test="studentId != null  and studentId != ''"> and student_id = #{studentId}</if>
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="gender != null  and gender != ''"> and gender = #{gender}</if>
+            <if test="majorId != null "> and major_id = #{majorId}</if>
+            <if test="grade != null  and grade != ''"> and grade = #{grade}</if>
+            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
+            <if test="password != null  and password != ''"> and password = #{password}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+            <if test="updatedAt != null "> and updated_at = #{updatedAt}</if>
+        </where>
+    </select>
+    
+    <select id="selectStudentByStudentId" parameterType="String" resultMap="StudentResult">
+        <include refid="selectStudentVo"/>
+        where student_id = #{studentId} and venue_id = 6
+    </select>
+
+    <insert id="insertStudent" parameterType="Student">
+        insert into student
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null and studentId != ''">student_id,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="gender != null and gender != ''">gender,</if>
+            <if test="majorId != null">major_id,</if>
+            <if test="grade != null and grade != ''">grade,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="venueId != null">venue_id,</if>
+            <if test="password != null and password != ''">password,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null and studentId != ''">#{studentId},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="gender != null and gender != ''">#{gender},</if>
+            <if test="majorId != null">#{majorId},</if>
+            <if test="grade != null and grade != ''">#{grade},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="venueId != null">#{venueId},</if>
+            <if test="password != null and password != ''">#{password},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+         </trim>
+    </insert>
+
+    <update id="updateStudent" parameterType="Student">
+        update student
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="gender != null and gender != ''">gender = #{gender},</if>
+            <if test="majorId != null">major_id = #{majorId},</if>
+            <if test="grade != null and grade != ''">grade = #{grade},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="venueId != null">venue_id = #{venueId},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+        </trim>
+        where student_id = #{studentId}
+    </update>
+
+    <delete id="deleteStudentByStudentId" parameterType="String">
+        delete from student where student_id = #{studentId} and venue_id = 6
+    </delete>
+
+    <delete id="deleteStudentByStudentIds" parameterType="String">
+        delete from student where student_id in 
+        <foreach item="studentId" collection="array" open="(" separator="," close=")">
+            #{studentId}
+        </foreach>
+        and venue_id = 6
+    </delete>
+</mapper>

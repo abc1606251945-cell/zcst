@@ -1,6 +1,7 @@
 package com.zcst.manage.service;
 
 import java.util.List;
+import com.github.pagehelper.PageInfo;
 import com.zcst.manage.domain.Student;
 import com.zcst.manage.domain.Vo.StudentVo;
 
@@ -27,6 +28,14 @@ public interface ISiqiStudentService
      * @return 思齐馆学生管理 VO 集合
      */
     public List<StudentVo> selectStudentList(Student student);
+
+    /**
+     * 查询思齐馆学生管理列表（带分页信息）
+     *
+     * @param student 思齐馆学生管理
+     * @return 包含分页信息的思齐馆学生管理列表
+     */
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student);
 
     /**
      * 新增思齐馆学生管理

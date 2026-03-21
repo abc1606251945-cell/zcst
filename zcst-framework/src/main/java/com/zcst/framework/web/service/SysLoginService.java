@@ -6,6 +6,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import com.zcst.common.constant.CacheConstants;
 import com.zcst.common.constant.Constants;
@@ -25,6 +27,7 @@ import com.zcst.common.utils.ip.IpUtils;
 import com.zcst.framework.manager.AsyncManager;
 import com.zcst.framework.manager.factory.AsyncFactory;
 import com.zcst.framework.security.context.AuthenticationContextHolder;
+import com.zcst.common.core.domain.entity.SysUser;
 import com.zcst.system.service.ISysConfigService;
 import com.zcst.system.service.ISysUserService;
 
@@ -36,6 +39,8 @@ import com.zcst.system.service.ISysUserService;
 @Component
 public class SysLoginService
 {
+    private static final Logger log = LoggerFactory.getLogger(SysLoginService.class);
+
     @Autowired
     private TokenService tokenService;
 
@@ -94,7 +99,18 @@ public class SysLoginService
         }
         AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_SUCCESS, MessageUtils.message("user.login.success")));
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-        recordLoginInfo(loginUser.getUserId());
+        // 只有管理员用户才更新登录信息，学生用户跳过
+        // 管理员用户的userId通常是数据库中的真实ID，而学生用户的userId是通过学生ID哈希生成的
+        // 这里通过检查用户是否存在于sys_user表来判断是否为管理员
+        try {
+            SysUser adminUser = userService.selectUserById(loginUser.getUserId());
+            if (adminUser != null) {
+                recordLoginInfo(loginUser.getUserId());
+            }
+        } catch (Exception e) {
+            // 学生用户查询不到，跳过更新
+            log.debug("用户不存在于sys_user表，跳过登录信息更新");
+        }
         // 生成token
         return tokenService.createToken(loginUser);
     }

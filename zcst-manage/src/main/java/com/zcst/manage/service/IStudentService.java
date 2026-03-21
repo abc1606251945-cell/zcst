@@ -1,5 +1,7 @@
 package com.zcst.manage.service;
 
+import com.github.pagehelper.PageInfo;
+
 import java.util.List;
 import com.zcst.manage.domain.Student;
 import com.zcst.manage.domain.Vo.StudentVo;
@@ -24,9 +26,17 @@ public interface IStudentService
      * 查询学生管理列表
      * 
      * @param student 学生管理
-     * @return 学生管理 VO 集合
+     * @return 学生管理 VO
      */
     public List<StudentVo> selectStudentList(Student student);
+    
+    /**
+     * 查询学生管理列表（带分页信息）
+     * 
+     * @param student 学生管理
+     * @return 包含分页信息的学生管理 VO 列表
+     */
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student);
 
     /**
      * 新增学生管理

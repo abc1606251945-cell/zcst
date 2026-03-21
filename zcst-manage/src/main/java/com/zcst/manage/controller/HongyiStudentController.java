@@ -43,9 +43,7 @@ public class HongyiStudentController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
-        startPage();
-        List<StudentVo> list = hongyiStudentService.selectStudentList(student);
-        return getDataTable(list);
+        return getDataTable(hongyiStudentService.selectStudentListWithPage(student));
     }
 
     /**

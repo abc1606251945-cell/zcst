@@ -8,7 +8,7 @@ import com.zcst.common.core.controller.BaseController;
 import com.zcst.common.core.domain.AjaxResult;
 import com.zcst.common.core.domain.model.RegisterBody;
 import com.zcst.common.utils.StringUtils;
-import com.zcst.framework.web.service.SysRegisterService;
+import com.zcst.web.service.SysRegisterService;
 import com.zcst.system.service.ISysConfigService;
 
 /**

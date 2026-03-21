@@ -1,18 +1,29 @@
 package com.zcst.manage.service.impl;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import com.zcst.manage.mapper.SiqiStudentMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.zcst.manage.mapper.StudentMapper;
+import com.github.pagehelper.PageInfo;
 import com.zcst.manage.domain.Student;
 import com.zcst.manage.domain.Vo.StudentVo;
 import com.zcst.manage.service.IStudentService;
 import com.zcst.system.mapper.SysPostMapper;
+import com.zcst.system.mapper.SysRoleMapper;
+import com.zcst.system.mapper.SysUserMapper;
+import com.zcst.system.mapper.SysUserPostMapper;
+import com.zcst.system.mapper.SysUserRoleMapper;
 import com.zcst.system.domain.SysPost;
+import com.zcst.common.core.domain.entity.SysRole;
+import com.zcst.common.core.domain.entity.SysUser;
+import com.zcst.system.domain.SysUserPost;
+import com.zcst.system.domain.SysUserRole;
 
 /**
  * 学生管理Service业务层处理
@@ -27,7 +38,13 @@ public class StudentServiceImpl implements IStudentService
     private StudentMapper studentMapper ;
     
     @Autowired
-    private SysPostMapper sysPostMapper;
+    private SysRoleMapper sysRoleMapper;
+    
+    @Autowired
+    private SysUserMapper sysUserMapper;
+    
+    @Autowired
+    private SysUserRoleMapper sysUserRoleMapper;
 
     /**
      * 查询学生管理
@@ -52,9 +69,45 @@ public class StudentServiceImpl implements IStudentService
     public List<StudentVo> selectStudentList(Student student)
     {
         List<Student> students = studentMapper.selectStudentList(student);
-        return students.stream()
-                .map(this::convertToStudentVo)
-                .collect(Collectors.toList());
+        List<StudentVo> studentVos = new ArrayList<>();
+        for (Student s : students) {
+            studentVos.add(convertToStudentVo(s));
+        }
+        return studentVos;
+    }
+
+    /**
+     * 查询学生管理列表（带分页信息）
+     * 
+     * @param student 学生管理
+     * @return 包含分页信息的学生管理 VO 列表
+     */
+    @Override
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student)
+    {
+        List<Student> students = studentMapper.selectStudentList(student);
+        PageInfo<Student> pageInfo = new PageInfo<>(students);
+        List<StudentVo> studentVos = new ArrayList<>();
+        for (Student s : students) {
+            studentVos.add(convertToStudentVo(s));
+        }
+        PageInfo<StudentVo> result = new PageInfo<>(studentVos);
+        // 复制分页信息
+        result.setTotal(pageInfo.getTotal());
+        result.setPageNum(pageInfo.getPageNum());
+        result.setPageSize(pageInfo.getPageSize());
+        result.setPages(pageInfo.getPages());
+        result.setStartRow(pageInfo.getStartRow());
+        result.setEndRow(pageInfo.getEndRow());
+        result.setHasNextPage(pageInfo.isHasNextPage());
+        result.setHasPreviousPage(pageInfo.isHasPreviousPage());
+        result.setIsFirstPage(pageInfo.isIsFirstPage());
+        result.setIsLastPage(pageInfo.isIsLastPage());
+        result.setNavigatePages(pageInfo.getNavigatePages());
+        result.setNavigateFirstPage(pageInfo.getNavigateFirstPage());
+        result.setNavigateLastPage(pageInfo.getNavigateLastPage());
+        result.setNavigatepageNums(pageInfo.getNavigatepageNums());
+        return result;
     }
 
     /**
@@ -64,9 +117,13 @@ public class StudentServiceImpl implements IStudentService
      * @return 结果
      */
     @Override
+    @Transactional
     public int insertStudent(Student student)
     {
-        return studentMapper.insertStudent(student);
+        int result = studentMapper.insertStudent(student);
+        // 自动绑定普通员工角色
+        autoBindEmployeeRole(student);
+        return result;
     }
 
     /**
@@ -76,9 +133,11 @@ public class StudentServiceImpl implements IStudentService
      * @return 结果
      */
     @Override
+    @Transactional
     public int updateStudent(Student student)
     {
-        return studentMapper.updateStudent(student);
+        int result = studentMapper.updateStudent(student);
+        return result;
     }
 
     /**
@@ -112,18 +171,59 @@ public class StudentServiceImpl implements IStudentService
      * @return 学生 VO 对象
      */
     private StudentVo convertToStudentVo(Student student) {
+        if (student == null) {
+            return null;
+        }
         StudentVo vo = new StudentVo();
         BeanUtils.copyProperties(student, vo);
         
-        // 通过学号查询岗位
+        // 通过学号查询角色
         if (student.getStudentId() != null) {
-            List<SysPost> posts = sysPostMapper.selectPostsByUserName(student.getStudentId());
-            vo.setPostList(posts);
-            vo.setPostNames(posts.stream()
-                    .map(SysPost::getPostName)
+            List<SysRole> roles = sysRoleMapper.selectRolesByUserName(student.getStudentId());
+            vo.setRoleList(roles);
+            vo.setRoleNames(roles.stream()
+                    .map(SysRole::getRoleName)
                     .collect(Collectors.joining(", ")));
         }
         
         return vo;
+    }
+    
+    /**
+     * 通过学号获取用户ID
+     * 
+     * @param studentId 学号
+     * @return 用户ID
+     */
+    private Long getUserIdByStudentId(String studentId) {
+        SysUser user = sysUserMapper.selectUserByUserName(studentId);
+        return user != null ? user.getUserId() : null;
+    }
+    
+    /**
+     * 自动绑定普通员工角色
+     * 
+     * @param student 学生对象
+     */
+    private void autoBindEmployeeRole(Student student) {
+        try {
+            // 获取普通员工角色
+            SysRole role = sysRoleMapper.checkRoleNameUnique("普通员工");
+            if (role != null) {
+                Long userId = getUserIdByStudentId(student.getStudentId());
+                if (userId != null) {
+                    // 绑定普通员工角色
+                    List<SysUserRole> userRoleList = new ArrayList<>();
+                    SysUserRole userRole = new SysUserRole();
+                    userRole.setUserId(userId);
+                    userRole.setRoleId(role.getRoleId());
+                    userRoleList.add(userRole);
+                    sysUserRoleMapper.batchUserRole(userRoleList);
+                }
+            }
+        } catch (Exception e) {
+            // 记录角色绑定失败的错误日志
+            e.printStackTrace();
+        }
     }
 }

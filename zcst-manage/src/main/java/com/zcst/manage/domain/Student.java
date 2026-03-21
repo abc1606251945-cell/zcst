@@ -60,4 +60,10 @@ public class Student extends BaseEntity
     /** 更新时间 */
     private Date updatedAt;
 
+    /** 角色ID列表 */
+    private Long[] roleIds;
+
+    /** 岗位ID列表 */
+    private Long[] postIds;
+
 }

@@ -1,8 +1,11 @@
 package com.zcst.manage.service.impl;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import com.github.pagehelper.PageInfo;
+import com.github.pagehelper.PageHelper;
 import com.zcst.manage.mapper.SiqiStudentMapper;
 import com.zcst.manage.service.ISiqiStudentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,10 +55,34 @@ public class SiqiStudentServiceImpl implements ISiqiStudentService
     @Override
     public List<StudentVo> selectStudentList(Student student)
     {
+        // 设置思齐馆的场馆ID为1
+        student.setVenueId(1L);
         List<Student> students = siqiStudentMapper.selectStudentList(student);
-        return students.stream()
-                .map(this::convertToStudentVo)
-                .collect(Collectors.toList());
+        List<StudentVo> studentVos = new ArrayList<>();
+        for (Student s : students) {
+            studentVos.add(convertToStudentVo(s));
+        }
+        return studentVos;
+    }
+
+    /**
+     * 查询思齐馆学生管理列表（带分页信息）
+     *
+     * @param student 思齐馆学生管理
+     * @return 包含分页信息的思齐馆学生管理列表
+     */
+    @Override
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student)
+    {
+        // 设置思齐馆的场馆ID为1
+        student.setVenueId(1L);
+        PageHelper.startPage(1, 10);
+        List<Student> students = siqiStudentMapper.selectStudentList(student);
+        List<StudentVo> studentVos = new ArrayList<>();
+        for (Student s : students) {
+            studentVos.add(convertToStudentVo(s));
+        }
+        return new PageInfo<>(studentVos);
     }
 
     /**
