@@ -22,6 +22,7 @@ import com.zcst.manage.domain.Student;
 import com.zcst.manage.domain.Vo.StudentVo;
 import com.zcst.common.utils.poi.ExcelUtil;
 import com.zcst.common.core.page.TableDataInfo;
+import com.zcst.common.core.page.PageDomain;
 
 /**
  * 国防教育体验馆学生管理 Controller
@@ -43,7 +44,8 @@ public class GuofangStudentController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
-        return getDataTable(guofangStudentService.selectStudentListWithPage(student));
+        PageDomain pageDomain = getPageDomain();
+        return getDataTable(guofangStudentService.selectStudentListWithPage(student, pageDomain.getPageNum(), pageDomain.getPageSize()));
     }
 
     /**

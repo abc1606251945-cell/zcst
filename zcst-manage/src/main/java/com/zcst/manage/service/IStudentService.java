@@ -37,6 +37,16 @@ public interface IStudentService
      * @return 包含分页信息的学生管理 VO 列表
      */
     public PageInfo<StudentVo> selectStudentListWithPage(Student student);
+    
+    /**
+     * 查询学生管理列表（带分页信息）
+     * 
+     * @param student 学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
+     * @return 包含分页信息的学生管理 VO 列表
+     */
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize);
 
     /**
      * 新增学生管理

@@ -69,14 +69,16 @@ public class SiqiStudentServiceImpl implements ISiqiStudentService
      * 查询思齐馆学生管理列表（带分页信息）
      *
      * @param student 思齐馆学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
      * @return 包含分页信息的思齐馆学生管理列表
      */
     @Override
-    public PageInfo<StudentVo> selectStudentListWithPage(Student student)
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize)
     {
         // 设置思齐馆的场馆ID为1
         student.setVenueId(1L);
-        PageHelper.startPage(1, 10);
+        PageHelper.startPage(pageNum, pageSize);
         List<Student> students = siqiStudentMapper.selectStudentList(student);
         List<StudentVo> studentVos = new ArrayList<>();
         for (Student s : students) {

@@ -33,9 +33,11 @@ public interface IXinyuanStudentService
      * 查询心缘馆学生管理列表（带分页信息）
      *
      * @param student 心缘馆学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
      * @return 包含分页信息的心缘馆学生管理列表
      */
-    public PageInfo<StudentVo> selectStudentListWithPage(Student student);
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize);
 
     /**
      * 新增心缘馆学生管理

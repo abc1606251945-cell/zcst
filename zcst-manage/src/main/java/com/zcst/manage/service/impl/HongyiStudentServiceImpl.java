@@ -67,14 +67,16 @@ public class HongyiStudentServiceImpl implements IHongyiStudentService
      * 查询弘毅馆学生管理列表（带分页信息）
      *
      * @param student 弘毅馆学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
      * @return 包含分页信息的弘毅馆学生管理列表
      */
     @Override
-    public PageInfo<StudentVo> selectStudentListWithPage(Student student)
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize)
     {
         // 设置弘毅馆的场馆ID为2
         student.setVenueId(2L);
-        PageHelper.startPage(1, 10);
+        PageHelper.startPage(pageNum, pageSize);
         List<Student> students = studentMapper.selectStudentList(student);
         List<StudentVo> studentVos = new ArrayList<>();
         for (Student s : students) {

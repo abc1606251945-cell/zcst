@@ -32,9 +32,11 @@ public interface IVenueService
      * 查询场馆信息管理列表（带分页信息）
      * 
      * @param venue 场馆信息管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
      * @return 包含分页信息的场馆信息管理列表
      */
-    public PageInfo<Venue> selectVenueListWithPage(Venue venue);
+    public PageInfo<Venue> selectVenueListWithPage(Venue venue, int pageNum, int pageSize);
 
     /**
      * 新增场馆信息管理

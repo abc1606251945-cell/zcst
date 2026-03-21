@@ -33,9 +33,11 @@ public interface IGuofangStudentService
      * 查询国防教育体验馆学生管理列表（带分页信息）
      *
      * @param student 国防教育体验馆学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
      * @return 包含分页信息的国防教育体验馆学生管理列表
      */
-    public PageInfo<StudentVo> selectStudentListWithPage(Student student);
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize);
 
     /**
      * 新增国防教育体验馆学生管理

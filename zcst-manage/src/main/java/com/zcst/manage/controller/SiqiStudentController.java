@@ -23,6 +23,7 @@ import com.zcst.manage.domain.Vo.StudentVo;
 import com.zcst.manage.service.IStudentService;
 import com.zcst.common.utils.poi.ExcelUtil;
 import com.zcst.common.core.page.TableDataInfo;
+import com.zcst.common.core.page.PageDomain;
 
 /**
  * 思齐馆学生管理Controller
@@ -44,7 +45,8 @@ public class SiqiStudentController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
-        return getDataTable(siqiStudentService.selectStudentListWithPage(student));
+        PageDomain pageDomain = getPageDomain();
+        return getDataTable(siqiStudentService.selectStudentListWithPage(student, pageDomain.getPageNum(), pageDomain.getPageSize()));
     }
 
     /**

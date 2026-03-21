@@ -14,6 +14,7 @@ import com.github.pagehelper.PageInfo;
 import com.zcst.manage.domain.Student;
 import com.zcst.manage.domain.Vo.StudentVo;
 import com.zcst.manage.service.IStudentService;
+import com.github.pagehelper.PageHelper;
 import com.zcst.system.mapper.SysPostMapper;
 import com.zcst.system.mapper.SysRoleMapper;
 import com.zcst.system.mapper.SysUserMapper;
@@ -60,10 +61,27 @@ public class StudentServiceImpl implements IStudentService
     }
 
     /**
+     * 查询学生管理列表（带分页信息）
+     * 
+     * @param student 学生管理
+     * @return 包含分页信息的学生管理 VO 列表
+     */
+    @Override
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student)
+    {
+        List<Student> students = studentMapper.selectStudentList(student);
+        List<StudentVo> studentVos = new ArrayList<>();
+        for (Student s : students) {
+            studentVos.add(convertToStudentVo(s));
+        }
+        return new PageInfo<>(studentVos);
+    }
+
+    /**
      * 查询学生管理列表
      * 
      * @param student 学生管理
-     * @return 学生管理 VO
+     * @return 学生管理 VO 列表
      */
     @Override
     public List<StudentVo> selectStudentList(Student student)
@@ -80,35 +98,23 @@ public class StudentServiceImpl implements IStudentService
      * 查询学生管理列表（带分页信息）
      * 
      * @param student 学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
      * @return 包含分页信息的学生管理 VO 列表
      */
     @Override
-    public PageInfo<StudentVo> selectStudentListWithPage(Student student)
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize)
     {
+        PageHelper.startPage(pageNum, pageSize);
         List<Student> students = studentMapper.selectStudentList(student);
-        PageInfo<Student> pageInfo = new PageInfo<>(students);
         List<StudentVo> studentVos = new ArrayList<>();
         for (Student s : students) {
             studentVos.add(convertToStudentVo(s));
         }
-        PageInfo<StudentVo> result = new PageInfo<>(studentVos);
-        // 复制分页信息
-        result.setTotal(pageInfo.getTotal());
-        result.setPageNum(pageInfo.getPageNum());
-        result.setPageSize(pageInfo.getPageSize());
-        result.setPages(pageInfo.getPages());
-        result.setStartRow(pageInfo.getStartRow());
-        result.setEndRow(pageInfo.getEndRow());
-        result.setHasNextPage(pageInfo.isHasNextPage());
-        result.setHasPreviousPage(pageInfo.isHasPreviousPage());
-        result.setIsFirstPage(pageInfo.isIsFirstPage());
-        result.setIsLastPage(pageInfo.isIsLastPage());
-        result.setNavigatePages(pageInfo.getNavigatePages());
-        result.setNavigateFirstPage(pageInfo.getNavigateFirstPage());
-        result.setNavigateLastPage(pageInfo.getNavigateLastPage());
-        result.setNavigatepageNums(pageInfo.getNavigatepageNums());
-        return result;
+        return new PageInfo<>(studentVos);
     }
+
+
 
     /**
      * 新增学生管理

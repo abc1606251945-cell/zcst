@@ -23,6 +23,7 @@ import com.zcst.manage.mapper.StudentMapper;
 import com.zcst.manage.service.IStudentService;
 import com.zcst.common.utils.poi.ExcelUtil;
 import com.zcst.common.core.page.TableDataInfo;
+import com.zcst.common.core.page.PageDomain;
 
 /**
  * 学生管理Controller
@@ -47,8 +48,8 @@ public class StudentController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
-        startPage();
-        PageInfo<StudentVo> pageInfo = studentService.selectStudentListWithPage(student);
+        PageDomain pageDomain = getPageDomain();
+        PageInfo<StudentVo> pageInfo = studentService.selectStudentListWithPage(student, pageDomain.getPageNum(), pageDomain.getPageSize());
         return getDataTable(pageInfo.getList(), pageInfo.getTotal());
     }
 

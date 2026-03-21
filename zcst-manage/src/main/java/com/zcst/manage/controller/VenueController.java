@@ -20,6 +20,7 @@ import com.zcst.manage.domain.Venue;
 import com.zcst.manage.service.IVenueService;
 import com.zcst.common.utils.poi.ExcelUtil;
 import com.zcst.common.core.page.TableDataInfo;
+import com.zcst.common.core.page.PageDomain;
 
 /**
  * 场馆信息管理Controller
@@ -41,7 +42,8 @@ public class VenueController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Venue venue)
     {
-        return getDataTable(venueService.selectVenueListWithPage(venue));
+        PageDomain pageDomain = getPageDomain();
+        return getDataTable(venueService.selectVenueListWithPage(venue, pageDomain.getPageNum(), pageDomain.getPageSize()));
     }
 
     /**

@@ -119,6 +119,14 @@ public class BaseController
     }
 
     /**
+     * 获取分页参数
+     */
+    protected PageDomain getPageDomain()
+    {
+        return TableSupport.buildPageRequest();
+    }
+
+    /**
      * 返回成功
      */
     public AjaxResult success()

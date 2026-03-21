@@ -67,14 +67,16 @@ public class GuofangStudentServiceImpl implements IGuofangStudentService
      * 查询国防教育体验馆学生管理列表（带分页信息）
      *
      * @param student 国防教育体验馆学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
      * @return 包含分页信息的国防教育体验馆学生管理列表
      */
     @Override
-    public PageInfo<StudentVo> selectStudentListWithPage(Student student)
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize)
     {
         // 设置国防教育体验馆的场馆ID为6
         student.setVenueId(6L);
-        PageHelper.startPage(1, 10);
+        PageHelper.startPage(pageNum, pageSize);
         List<Student> students = studentMapper.selectStudentList(student);
         List<StudentVo> studentVos = new ArrayList<>();
         for (Student s : students) {

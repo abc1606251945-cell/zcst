@@ -67,14 +67,16 @@ public class XinyuanStudentServiceImpl implements IXinyuanStudentService
      * 查询心缘馆学生管理列表（带分页信息）
      *
      * @param student 心缘馆学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
      * @return 包含分页信息的心缘馆学生管理列表
      */
     @Override
-    public PageInfo<StudentVo> selectStudentListWithPage(Student student)
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize)
     {
         // 设置心缘馆的场馆ID为3
         student.setVenueId(3L);
-        PageHelper.startPage(1, 10);
+        PageHelper.startPage(pageNum, pageSize);
         List<Student> students = studentMapper.selectStudentList(student);
         List<StudentVo> studentVos = new ArrayList<>();
         for (Student s : students) {
