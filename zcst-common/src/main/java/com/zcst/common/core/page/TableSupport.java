@@ -41,8 +41,20 @@ public class TableSupport
     public static PageDomain getPageDomain()
     {
         PageDomain pageDomain = new PageDomain();
-        pageDomain.setPageNum(Convert.toInt(ServletUtils.getParameter(PAGE_NUM), 1));
-        pageDomain.setPageSize(Convert.toInt(ServletUtils.getParameter(PAGE_SIZE), 10));
+        // 优先获取page和limit参数，兼容前端分页组件
+        Integer pageNum = Convert.toInt(ServletUtils.getParameter("page"), 0);
+        Integer pageSize = Convert.toInt(ServletUtils.getParameter("limit"), 0);
+        
+        // 如果page和limit参数不存在，使用pageNum和pageSize参数
+        if (pageNum == 0) {
+            pageNum = Convert.toInt(ServletUtils.getParameter(PAGE_NUM), 1);
+        }
+        if (pageSize == 0) {
+            pageSize = Convert.toInt(ServletUtils.getParameter(PAGE_SIZE), 10);
+        }
+        
+        pageDomain.setPageNum(pageNum);
+        pageDomain.setPageSize(pageSize);
         pageDomain.setOrderByColumn(ServletUtils.getParameter(ORDER_BY_COLUMN));
         pageDomain.setIsAsc(ServletUtils.getParameter(IS_ASC));
         pageDomain.setReasonable(ServletUtils.getParameterToBool(REASONABLE));

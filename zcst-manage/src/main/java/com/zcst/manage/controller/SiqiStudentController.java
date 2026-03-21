@@ -45,8 +45,9 @@ public class SiqiStudentController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
-        PageDomain pageDomain = getPageDomain();
-        return getDataTable(siqiStudentService.selectStudentListWithPage(student, pageDomain.getPageNum(), pageDomain.getPageSize()));
+        startPage();
+        List<StudentVo> list = siqiStudentService.selectStudentList(student);
+        return getDataTable(list);
     }
 
     /**

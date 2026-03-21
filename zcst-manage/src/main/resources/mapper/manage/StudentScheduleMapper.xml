@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.StudentScheduleMapper">
+    <resultMap type="com.zcst.manage.domain.StudentSchedule" id="StudentScheduleResult">
+        <id property="scheduleId" column="schedule_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="selectStudentScheduleVo">
+        select schedule_id, student_id, start_time, end_time, created_at, updated_at
+        from student_schedule
+    </sql>
+
+    <select id="selectStudentScheduleList" parameterType="com.zcst.manage.domain.StudentSchedule" resultMap="StudentScheduleResult">
+        <include refid="selectStudentScheduleVo"/>
+        <where>
+            <if test="studentId != null and studentId != ''">
+                and student_id = #{studentId}
+            </if>
+            <if test="startTime != null">
+                and start_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and end_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectStudentScheduleByStudentId" parameterType="string" resultMap="StudentScheduleResult">
+        <include refid="selectStudentScheduleVo"/>
+        where student_id = #{studentId}
+        order by start_time desc
+    </select>
+
+    <select id="selectStudentScheduleByTimeRange" parameterType="map" resultMap="StudentScheduleResult">
+        <include refid="selectStudentScheduleVo"/>
+        where student_id = #{studentId}
+        and ((start_time between #{startTime} and #{endTime})
+        or (end_time between #{startTime} and #{endTime})
+        or (start_time &lt;= #{startTime} and end_time &gt;= #{endTime}))
+    </select>
+
+    <select id="selectStudentScheduleByScheduleId" parameterType="integer" resultMap="StudentScheduleResult">
+        <include refid="selectStudentScheduleVo"/>
+        where schedule_id = #{scheduleId}
+    </select>
+
+    <insert id="insertStudentSchedule" parameterType="com.zcst.manage.domain.StudentSchedule">
+        insert into student_schedule (student_id, start_time, end_time)
+        values (#{studentId}, #{startTime}, #{endTime})
+    </insert>
+
+    <update id="updateStudentSchedule" parameterType="com.zcst.manage.domain.StudentSchedule">
+        update student_schedule
+        set student_id = #{studentId},
+            start_time = #{startTime},
+            end_time = #{endTime}
+        where schedule_id = #{scheduleId}
+    </update>
+
+    <delete id="deleteStudentScheduleByScheduleId" parameterType="integer">
+        delete from student_schedule
+        where schedule_id = #{scheduleId}
+    </delete>
+
+    <delete id="deleteStudentScheduleByScheduleIds" parameterType="integer">
+        delete from student_schedule
+        where schedule_id in
+        <foreach item="scheduleId" collection="array" open="(" separator="," close=")">
+            #{scheduleId}
+        </foreach>
+    </delete>
+</mapper>

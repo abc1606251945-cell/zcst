@@ -56,6 +56,15 @@ public class GuofangStudentServiceImpl implements IGuofangStudentService
         // 设置国防教育体验馆的场馆ID为6
         student.setVenueId(6L);
         List<Student> students = studentMapper.selectStudentList(student);
+        if (students instanceof com.github.pagehelper.Page) {
+            com.github.pagehelper.Page<Student> page = (com.github.pagehelper.Page<Student>) students;
+            com.github.pagehelper.Page<StudentVo> result = new com.github.pagehelper.Page<>(page.getPageNum(), page.getPageSize());
+            result.setTotal(page.getTotal());
+            for (Student s : students) {
+                result.add(convertToStudentVo(s));
+            }
+            return result;
+        }
         List<StudentVo> studentVos = new ArrayList<>();
         for (Student s : students) {
             studentVos.add(convertToStudentVo(s));
@@ -78,11 +87,11 @@ public class GuofangStudentServiceImpl implements IGuofangStudentService
         student.setVenueId(6L);
         PageHelper.startPage(pageNum, pageSize);
         List<Student> students = studentMapper.selectStudentList(student);
-        List<StudentVo> studentVos = new ArrayList<>();
-        for (Student s : students) {
-            studentVos.add(convertToStudentVo(s));
-        }
-        return new PageInfo<>(studentVos);
+        PageInfo<Student> studentsPage = new PageInfo<>(students);
+        List<StudentVo> studentVos = students.stream().map(this::convertToStudentVo).collect(Collectors.toList());
+        PageInfo<StudentVo> result = new PageInfo<>(studentVos);
+        result.setTotal(studentsPage.getTotal());
+        return result;
     }
 
     /**

@@ -44,8 +44,9 @@ public class XinyuanStudentController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
-        PageDomain pageDomain = getPageDomain();
-        return getDataTable(xinyuanStudentService.selectStudentListWithPage(student, pageDomain.getPageNum(), pageDomain.getPageSize()));
+        startPage();
+        List<StudentVo> list = xinyuanStudentService.selectStudentList(student);
+        return getDataTable(list);
     }
 
     /**
