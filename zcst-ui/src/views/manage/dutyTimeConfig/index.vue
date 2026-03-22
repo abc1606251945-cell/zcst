@@ -34,7 +34,7 @@
         <el-table-column label="结束时间" prop="endTime" width="120" align="center" />
         <el-table-column label="是否启用" prop="isEnable" width="100" align="center">
           <template slot-scope="scope">
-            <el-switch v-model="scope.row.isEnable" active-value="1" inactive-value="0" @change="handleStatusChange(scope.row)" />
+            <el-switch v-model="scope.row.isEnable" :active-value="1" :inactive-value="0" @change="handleStatusChange(scope.row)" />
           </template>
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" width="180" align="center" />
@@ -61,7 +61,7 @@
           <el-time-picker v-model="form.endTime" format="HH:mm" placeholder="请选择结束时间" style="width: 100%" />
         </el-form-item>
         <el-form-item label="是否启用">
-          <el-switch v-model="form.isEnable" active-value="1" inactive-value="0" />
+          <el-switch v-model="form.isEnable" :active-value="1" :inactive-value="0" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">

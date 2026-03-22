@@ -1,8 +1,11 @@
 package com.zcst.manage.mapper;
 
 import com.zcst.manage.domain.DutySchedule;
+import org.apache.ibatis.annotations.Param;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 值班表Mapper接口
@@ -67,6 +70,38 @@ public interface DutyScheduleMapper
      * @return 结果
      */
     public int deleteDutyScheduleByDutyId(Integer dutyId);
+
+    /**
+     * 查询指定时间内是否有重复排班
+     * 
+     * @param studentId 学号
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 结果
+     */
+    public List<DutySchedule> selectOverlappingDuty(@Param("studentId") String studentId, @Param("startTime") Date startTime, @Param("endTime") Date endTime);
+
+    /**
+     * 查询指定场馆在指定时间内的排班数量
+     * 
+     * @param venueId 场馆ID
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 结果
+     */
+    public int countVenueDuty(@Param("venueId") Integer venueId, @Param("startTime") Date startTime, @Param("endTime") Date endTime);
+
+    /**
+     * 批量查询学生的总值班时长
+     * 
+     * @param studentIds 学生ID列表
+     * @return 结果
+     */
+    public List<Map<String, Object>> selectStudentsTotalDutyTime(@Param("studentIds") List<String> studentIds);
+
+    public int deleteDutyScheduleByVenueAndTime(@Param("venueId") Integer venueId, @Param("startTime") String startTime, @Param("endTime") String endTime);
+
+    public int deleteDutyScheduleByVenueAndRange(@Param("venueId") Integer venueId, @Param("startDate") Date startDate, @Param("endDate") Date endDate);
 
     /**
      * 批量删除值班表

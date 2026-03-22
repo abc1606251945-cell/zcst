@@ -6,6 +6,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="com.zcst.manage.domain.DutySchedule" id="DutyScheduleResult">
         <id property="dutyId" column="duty_id"/>
         <result property="studentId" column="student_id"/>
+        <result property="studentName" column="student_name"/>
+        <result property="gender" column="gender"/>
+        <result property="studentPhone" column="student_phone"/>
         <result property="venueId" column="venue_id"/>
         <result property="startTime" column="start_time"/>
         <result property="endTime" column="end_time"/>
@@ -15,43 +18,69 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDutyScheduleVo">
-        select duty_id, student_id, venue_id, start_time, end_time, remark, created_at, updated_at
-        from duty_schedule
+        select ds.duty_id, ds.student_id, s.name as student_name, s.gender, s.phone as student_phone, ds.venue_id, ds.start_time, ds.end_time, ds.remark, ds.created_at, ds.updated_at
+        from duty_schedule ds
+        left join student s on ds.student_id = s.student_id
     </sql>
 
     <select id="selectDutyScheduleList" parameterType="com.zcst.manage.domain.DutySchedule" resultMap="DutyScheduleResult">
         <include refid="selectDutyScheduleVo"/>
         <where>
             <if test="studentId != null and studentId != ''">
-                and student_id = #{studentId}
+                and ds.student_id = #{studentId}
+            </if>
+            <if test="studentName != null and studentName != ''">
+                and s.name like concat('%', #{studentName}, '%')
             </if>
             <if test="venueId != null">
-                and venue_id = #{venueId}
+                and ds.venue_id = #{venueId}
             </if>
             <if test="startTime != null">
-                and start_time >= #{startTime}
+                and ds.start_time >= #{startTime}
             </if>
             <if test="endTime != null">
-                and end_time &lt;= #{endTime}
+                and ds.end_time &lt;= #{endTime}
             </if>
         </where>
     </select>
 
     <select id="selectDutyScheduleByStudentId" parameterType="string" resultMap="DutyScheduleResult">
         <include refid="selectDutyScheduleVo"/>
-        where student_id = #{studentId}
-        order by start_time desc
+        where ds.student_id = #{studentId}
+        order by ds.start_time desc
     </select>
 
     <select id="selectDutyScheduleByVenueId" parameterType="integer" resultMap="DutyScheduleResult">
         <include refid="selectDutyScheduleVo"/>
-        where venue_id = #{venueId}
-        order by start_time desc
+        where ds.venue_id = #{venueId}
+        order by ds.start_time desc
     </select>
 
     <select id="selectDutyScheduleByDutyId" parameterType="integer" resultMap="DutyScheduleResult">
         <include refid="selectDutyScheduleVo"/>
-        where duty_id = #{dutyId}
+        where ds.duty_id = #{dutyId}
+    </select>
+
+    <select id="selectOverlappingDuty" resultMap="DutyScheduleResult">
+        <include refid="selectDutyScheduleVo"/>
+        where ds.student_id = #{studentId}
+        and ((ds.start_time &lt; #{endTime} and ds.end_time &gt; #{startTime}))
+    </select>
+
+    <select id="countVenueDuty" resultType="int">
+        select count(*) from duty_schedule
+        where venue_id = #{venueId}
+        and ((start_time &lt; #{endTime} and end_time &gt; #{startTime}))
+    </select>
+
+    <select id="selectStudentsTotalDutyTime" resultType="map">
+        select student_id as studentId, sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) as totalTime
+        from duty_schedule
+        where student_id in
+        <foreach item="studentId" collection="studentIds" open="(" separator="," close=")">
+            #{studentId}
+        </foreach>
+        group by student_id
     </select>
 
     <insert id="insertDutySchedule" parameterType="com.zcst.manage.domain.DutySchedule">
@@ -80,5 +109,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <foreach item="dutyId" collection="array" open="(" separator="," close=")">
             #{dutyId}
         </foreach>
+    </delete>
+
+    <delete id="deleteDutyScheduleByVenueAndTime">
+        delete from duty_schedule
+        where venue_id = #{venueId}
+          and time(start_time) = #{startTime}
+          and time(end_time) <![CDATA[<=]]> #{endTime}
+    </delete>
+
+    <delete id="deleteDutyScheduleByVenueAndRange">
+        delete from duty_schedule
+        where venue_id = #{venueId}
+          and start_time <![CDATA[>=]]> #{startDate}
+          and start_time <![CDATA[<=]]> #{endDate}
     </delete>
 </mapper>

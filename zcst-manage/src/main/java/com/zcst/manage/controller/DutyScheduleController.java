@@ -3,7 +3,9 @@ package com.zcst.manage.controller;
 import com.zcst.manage.domain.DutySchedule;
 import com.zcst.manage.domain.Vo.AvailableStudentVo;
 import com.zcst.manage.domain.Venue;
+import com.zcst.manage.domain.dto.AvailableStudentsDTO;
 import com.zcst.manage.domain.dto.AutoScheduleDTO;
+import com.zcst.manage.domain.dto.AutoScheduleByConfigDTO;
 import com.zcst.manage.service.IDutyScheduleService;
 import com.zcst.manage.service.IVenueService;
 import com.zcst.common.core.domain.entity.SysRole;
@@ -13,6 +15,7 @@ import com.zcst.common.core.controller.BaseController;
 import com.zcst.common.core.domain.AjaxResult;
 import com.zcst.common.core.page.TableDataInfo;
 import com.zcst.common.enums.BusinessType;
+import com.zcst.common.utils.DateUtils;
 import com.zcst.common.utils.SecurityUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,9 +29,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 场馆值班表管理 Controller
@@ -66,6 +73,43 @@ public class DutyScheduleController extends BaseController
             }
         }
         return null;
+    }
+
+    private Date parseClientDate(String value)
+    {
+        if (value == null) {
+            return null;
+        }
+        String v = value.trim();
+        if (v.isEmpty()) {
+            return null;
+        }
+        if (v.matches("^\\d+$")) {
+            try {
+                return new Date(Long.parseLong(v));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        if (v.contains("T")) {
+            try {
+                return Date.from(Instant.parse(v));
+            } catch (Exception ignored) {
+            }
+            try {
+                OffsetDateTime odt = OffsetDateTime.parse(v, DateTimeFormatter.ISO_DATE_TIME);
+                return Date.from(odt.toInstant());
+            } catch (Exception ignored) {
+            }
+            try {
+                LocalDateTime ldt = LocalDateTime.parse(v, DateTimeFormatter.ISO_DATE_TIME);
+                return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
+            } catch (Exception ignored) {
+            }
+            String normalized = v.replace("T", " ").replace("Z", "");
+            normalized = normalized.replaceAll("\\.\\d{3}$", "");
+            return DateUtils.parseDate(normalized);
+        }
+        return DateUtils.parseDate(v);
     }
 
     /**
@@ -235,11 +279,11 @@ public class DutyScheduleController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('manage:dutySchedule:list')")
     @PostMapping("/availableStudents")
-    public AjaxResult getAvailableStudents(@RequestBody Map<String, Object> params)
+    public AjaxResult getAvailableStudents(@RequestBody AvailableStudentsDTO dto)
     {
-        Integer venueId = (Integer) params.get("venueId");
-        Date startTime = (Date) params.get("startTime");
-        Date endTime = (Date) params.get("endTime");
+        Integer venueId = dto.getVenueId();
+        Date startTime = parseClientDate(dto.getStartTime());
+        Date endTime = parseClientDate(dto.getEndTime());
 
         // 验证权限：非超级管理员只能查询自己场馆的学生
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
@@ -249,24 +293,8 @@ public class DutyScheduleController extends BaseController
             List<SysRole> roles = currentUser.getRoles();
             if (roles != null) {
                 for (SysRole role : roles) {
-                    String roleName = role.getRoleName();
-                    if (roleName.contains("管理员")) {
-                        // 从角色名称中提取场馆ID
-                        if (roleName.contains("思齐馆")) {
-                            userVenueId = 1;
-                        } else if (roleName.contains("弘毅馆")) {
-                            userVenueId = 2;
-                        } else if (roleName.contains("心缘馆")) {
-                            userVenueId = 3;
-                        } else if (roleName.contains("笃学馆")) {
-                            userVenueId = 4;
-                        } else if (roleName.contains("知行馆")) {
-                            userVenueId = 5;
-                        } else if (roleName.contains("国防教育体验馆")) {
-                            userVenueId = 6;
-                        }
-                        break;
-                    }
+                    userVenueId = getVenueIdByRoleName(role.getRoleName());
+                    if (userVenueId != null) break;
                 }
             }
             if (userVenueId != null && !userVenueId.equals(venueId)) {
@@ -299,24 +327,8 @@ public class DutyScheduleController extends BaseController
             List<SysRole> roles = currentUser.getRoles();
             if (roles != null) {
                 for (SysRole role : roles) {
-                    String roleName = role.getRoleName();
-                    if (roleName.contains("管理员")) {
-                        // 从角色名称中提取场馆ID
-                        if (roleName.contains("思齐馆")) {
-                            userVenueId = 1;
-                        } else if (roleName.contains("弘毅馆")) {
-                            userVenueId = 2;
-                        } else if (roleName.contains("心缘馆")) {
-                            userVenueId = 3;
-                        } else if (roleName.contains("笃学馆")) {
-                            userVenueId = 4;
-                        } else if (roleName.contains("知行馆")) {
-                            userVenueId = 5;
-                        } else if (roleName.contains("国防教育体验馆")) {
-                            userVenueId = 6;
-                        }
-                        break;
-                    }
+                    userVenueId = getVenueIdByRoleName(role.getRoleName());
+                    if (userVenueId != null) break;
                 }
             }
             if (userVenueId != null && !userVenueId.equals(venueId)) {
@@ -338,11 +350,12 @@ public class DutyScheduleController extends BaseController
     @PreAuthorize("@ss.hasPermi('manage:dutySchedule:add')")
     @Log(title = "场馆值班表", businessType = BusinessType.INSERT)
     @PostMapping("/autoScheduleByConfig")
-    public AjaxResult autoScheduleByConfig(@RequestBody Map<String, Object> params)
+    public AjaxResult autoScheduleByConfig(@RequestBody AutoScheduleByConfigDTO dto)
     {
-        Integer venueId = (Integer) params.get("venueId");
-        Date startDate = (Date) params.get("startDate");
-        Integer weeks = (Integer) params.get("weeks");
+        Integer venueId = dto.getVenueId();
+        Date startDate = parseClientDate(dto.getStartDate());
+        Date endDate = parseClientDate(dto.getEndDate());
+        Integer weeks = dto.getWeeks();
 
         // 验证权限：非超级管理员只能为自己场馆排班
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
@@ -352,24 +365,8 @@ public class DutyScheduleController extends BaseController
             List<SysRole> roles = currentUser.getRoles();
             if (roles != null) {
                 for (SysRole role : roles) {
-                    String roleName = role.getRoleName();
-                    if (roleName.contains("管理员")) {
-                        // 从角色名称中提取场馆ID
-                        if (roleName.contains("思齐馆")) {
-                            userVenueId = 1;
-                        } else if (roleName.contains("弘毅馆")) {
-                            userVenueId = 2;
-                        } else if (roleName.contains("心缘馆")) {
-                            userVenueId = 3;
-                        } else if (roleName.contains("笃学馆")) {
-                            userVenueId = 4;
-                        } else if (roleName.contains("知行馆")) {
-                            userVenueId = 5;
-                        } else if (roleName.contains("国防教育体验馆")) {
-                            userVenueId = 6;
-                        }
-                        break;
-                    }
+                    userVenueId = getVenueIdByRoleName(role.getRoleName());
+                    if (userVenueId != null) break;
                 }
             }
             if (userVenueId != null && !userVenueId.equals(venueId)) {
@@ -377,7 +374,12 @@ public class DutyScheduleController extends BaseController
             }
         }
 
-        boolean result = dutyScheduleService.autoScheduleByConfig(venueId, startDate, weeks);
+        boolean result;
+        if (endDate != null) {
+            result = dutyScheduleService.autoScheduleByConfig(venueId, startDate, endDate);
+        } else {
+            result = dutyScheduleService.autoScheduleByConfig(venueId, startDate, weeks == null ? 1 : weeks);
+        }
         if (result) {
             return success("自动排班成功");
         } else {

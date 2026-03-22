@@ -9,6 +9,7 @@ import com.zcst.common.core.page.TableDataInfo;
 import com.zcst.common.utils.SecurityUtils;
 import com.zcst.manage.domain.DutyTimeConfig;
 import com.zcst.manage.domain.Venue;
+import com.zcst.manage.service.IDutyScheduleService;
 import com.zcst.manage.service.IDutyTimeConfigService;
 import com.zcst.manage.service.IVenueService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 值班时间配置Controller
@@ -153,6 +157,9 @@ public class DutyTimeConfigController extends BaseController
         return success(dutyTimeConfig);
     }
 
+    @Autowired
+    private IDutyScheduleService dutyScheduleService;
+
     /**
      * 新增值班时间配置
      */
@@ -181,7 +188,12 @@ public class DutyTimeConfigController extends BaseController
                 return AjaxResult.error("无权限添加其他场馆的值班时间配置");
             }
         }
-        return toAjax(dutyTimeConfigService.insertDutyTimeConfig(dutyTimeConfig));
+        int result = dutyTimeConfigService.insertDutyTimeConfig(dutyTimeConfig);
+        if (result > 0) {
+            // 时段发生变化，触发自动重排 (默认排当前周开始的19周)
+            dutyScheduleService.autoScheduleByConfig(dutyTimeConfig.getVenueId(), new java.util.Date(), 19);
+        }
+        return toAjax(result);
     }
 
     /**
@@ -195,6 +207,9 @@ public class DutyTimeConfigController extends BaseController
         // 验证权限：非超级管理员只能修改自己场馆的值班时间配置
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         DutyTimeConfig oldConfig = dutyTimeConfigService.selectDutyTimeConfigByConfigId(dutyTimeConfig.getConfigId());
+        if (oldConfig == null) {
+            return AjaxResult.error("值班时间配置不存在");
+        }
         if (!isSuperAdmin(currentUser)) {
             // 尝试从用户角色中获取场馆信息
             Long userVenueId = null;
@@ -213,7 +228,26 @@ public class DutyTimeConfigController extends BaseController
                 return AjaxResult.error("无权限修改其他场馆的值班时间配置");
             }
         }
-        return toAjax(dutyTimeConfigService.updateDutyTimeConfig(dutyTimeConfig));
+
+        if (dutyTimeConfig.getVenueId() == null) {
+            dutyTimeConfig.setVenueId(oldConfig.getVenueId());
+        }
+        if (dutyTimeConfig.getIsEnable() == null) {
+            dutyTimeConfig.setIsEnable(oldConfig.getIsEnable());
+        }
+        if (dutyTimeConfig.getStartTime() == null || dutyTimeConfig.getStartTime().trim().isEmpty()) {
+            dutyTimeConfig.setStartTime(oldConfig.getStartTime());
+        }
+        if (dutyTimeConfig.getEndTime() == null || dutyTimeConfig.getEndTime().trim().isEmpty()) {
+            dutyTimeConfig.setEndTime(oldConfig.getEndTime());
+        }
+
+        int result = dutyTimeConfigService.updateDutyTimeConfig(dutyTimeConfig);
+        if (result > 0) {
+            // 时段发生变化，触发自动重排
+            dutyScheduleService.autoScheduleByConfig(dutyTimeConfig.getVenueId(), new java.util.Date(), 19);
+        }
+        return toAjax(result);
     }
 
     /**
@@ -223,6 +257,7 @@ public class DutyTimeConfigController extends BaseController
     @DeleteMapping("/{configIds}")
     public AjaxResult remove(@PathVariable Integer[] configIds)
     {
+        Set<Integer> venueIds = new HashSet<>();
         // 验证权限：非超级管理员只能删除自己场馆的值班时间配置
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         if (!isSuperAdmin(currentUser)) {
@@ -242,12 +277,29 @@ public class DutyTimeConfigController extends BaseController
             if (userVenueId != null) {
                 for (Integer configId : configIds) {
                     DutyTimeConfig dutyTimeConfig = dutyTimeConfigService.selectDutyTimeConfigByConfigId(configId);
+                    if (dutyTimeConfig != null) {
+                        venueIds.add(dutyTimeConfig.getVenueId());
+                    }
                     if (!userVenueId.equals(Long.valueOf(dutyTimeConfig.getVenueId()))) {
                         return AjaxResult.error("无权限删除其他场馆的值班时间配置");
                     }
                 }
             }
+        } else {
+            for (Integer configId : configIds) {
+                DutyTimeConfig dutyTimeConfig = dutyTimeConfigService.selectDutyTimeConfigByConfigId(configId);
+                if (dutyTimeConfig != null) {
+                    venueIds.add(dutyTimeConfig.getVenueId());
+                }
+            }
         }
-        return toAjax(dutyTimeConfigService.deleteDutyTimeConfigByConfigIds(configIds));
+        int result = dutyTimeConfigService.deleteDutyTimeConfigByConfigIds(configIds);
+        if (result > 0) {
+            Date startDate = new Date();
+            for (Integer venueId : venueIds) {
+                dutyScheduleService.autoScheduleByConfig(venueId, startDate, 19);
+            }
+        }
+        return toAjax(result);
     }
 }

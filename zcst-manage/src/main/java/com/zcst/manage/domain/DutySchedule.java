@@ -22,6 +22,15 @@ public class DutySchedule extends BaseEntity
     /** 学号 */
     private String studentId;
 
+    /** 姓名 */
+    private String studentName;
+
+    /** 性别 */
+    private String gender;
+
+    /** 手机号码 */
+    private String studentPhone;
+
     /** 场馆ID */
     private Integer venueId;
 

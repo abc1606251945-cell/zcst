@@ -109,6 +109,8 @@ public interface IDutyScheduleService
      */
     public boolean autoScheduleByConfig(Integer venueId, Date startDate, int weeks);
 
+    public boolean autoScheduleByConfig(Integer venueId, Date startDate, Date endDate);
+
     /**
      * 时间段配置类
      */

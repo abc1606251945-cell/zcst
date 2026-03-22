@@ -30,6 +30,11 @@
             </el-form-item>
           </el-col>
           <el-col :span="6">
+            <el-form-item label="姓名">
+              <el-input v-model="queryParams.studentName" placeholder="请输入姓名" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
             <el-form-item label="场馆">
               <el-select v-model="queryParams.venueId" placeholder="请选择场馆" clearable>
                 <el-option
@@ -70,6 +75,8 @@
       <el-table v-loading="loading" :data="dutyScheduleList" border style="width: 100%">
         <el-table-column label="值班ID" prop="dutyId" width="80" />
         <el-table-column label="学号" prop="studentId" width="120" />
+        <el-table-column label="姓名" prop="studentName" width="100" />
+        <el-table-column label="性别" prop="gender" width="80" />
         <el-table-column label="场馆ID" prop="venueId" width="100" />
         <el-table-column label="值班开始时间" prop="startTime" width="180" />
         <el-table-column label="值班结束时间" prop="endTime" width="180" />
@@ -279,6 +286,7 @@ export default {
         pageNum: 1,
         pageSize: 10,
         studentId: '',
+        studentName: '',
         venueId: '',
         startTime: null,
         endTime: null
@@ -345,6 +353,7 @@ export default {
         pageNum: 1,
         pageSize: 10,
         studentId: '',
+        studentName: '',
         venueId: '',
         startTime: null,
         endTime: null
