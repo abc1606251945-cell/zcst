@@ -114,8 +114,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <delete id="deleteDutyScheduleByVenueAndTime">
         delete from duty_schedule
         where venue_id = #{venueId}
-          and time(start_time) = #{startTime}
-          and time(end_time) <![CDATA[<=]]> #{endTime}
+          and <![CDATA[
+              (time(start_time) >= #{startTime} and time(start_time) < #{endTime}) or
+              (time(end_time) > #{startTime} and time(end_time) <= #{endTime}) or
+              (time(start_time) <= #{startTime} and time(end_time) >= #{endTime})
+          ]]>
     </delete>
 
     <delete id="deleteDutyScheduleByVenueAndRange">
