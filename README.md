@@ -69,6 +69,8 @@ zcst-b/
 - **学生管理**：学生信息的增删改查和管理
 - **场地管理**：场地信息的维护和管理
 - **学校学生管理**：各学校学生的专门管理（如笃学、国防、弘毅、思齐、新源、知行等）
+- **值班表管理**：场馆值班表的查看、添加、编辑和删除，支持自动排班功能
+- **值班时间配置**：场馆值班时间的配置和管理
 
 ### 4. 工具管理
 
@@ -140,6 +142,17 @@ zcst-b/
 5. 后端处理请求，更新数据库
 6. 返回操作结果
 
+### 4. 值班表管理流程
+
+1. 场馆管理员登录系统
+2. 进入值班表管理页面
+3. 查看场馆值班表
+4. 添加/编辑/删除值班记录
+5. 配置值班时间
+6. 执行自动排班
+7. 后端处理请求，更新数据库
+8. 返回操作结果
+
 ## 数据库设计
 
 ### 主要表结构
@@ -171,12 +184,35 @@ zcst-b/
 
 | 字段名 | 数据类型 | 描述 |
 | :--- | :--- | :--- |
-| `id` | `BIGINT` | 场地ID |
-| `name` | `VARCHAR(100)` | 场地名称 |
-| `address` | `VARCHAR(200)` | 地址 |
-| `capacity` | `INT` | 容量 |
-| `status` | `CHAR(1)` | 状态 |
-| `create_time` | `DATETIME` | 创建时间 |
+| `venue_id` | `BIGINT` | 场地ID |
+| `venue_name` | `VARCHAR(100)` | 场地名称 |
+| `created_at` | `DATETIME` | 创建时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
+
+#### 值班表 (`duty_schedule`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `duty_id` | `INT` | 值班表ID |
+| `student_id` | `VARCHAR(20)` | 学号 |
+| `venue_id` | `INT` | 场馆ID |
+| `start_time` | `DATETIME` | 值班开始时间 |
+| `end_time` | `DATETIME` | 值班结束时间 |
+| `remark` | `VARCHAR(255)` | 备注 |
+| `created_at` | `DATETIME` | 创建时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
+
+#### 值班时间配置表 (`duty_time_config`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `config_id` | `INT` | 配置ID |
+| `venue_id` | `INT` | 场馆ID |
+| `start_time` | `TIME` | 开始时间 |
+| `end_time` | `TIME` | 结束时间 |
+| `is_enable` | `TINYINT` | 是否启用 |
+| `created_at` | `DATETIME` | 创建时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
 
 ## 开发指南
 
@@ -281,6 +317,24 @@ java -jar zcst-admin/target/zcst-admin.jar
 - 检查请求参数是否正确
 - 检查用户权限是否足够
 - 检查后端服务是否运行
+
+### 4. 场馆管理员权限问题
+
+- 问题：场馆管理员无法查看值班表或执行相关操作
+- 原因：缺少必要的权限配置
+- 解决方法：确保场馆管理员角色拥有以下权限：
+  - `manage:dutySchedule:list` - 查看值班表列表
+  - `manage:dutySchedule:query` - 查询值班表详情
+  - `manage:dutySchedule:add` - 添加值班记录
+  - `manage:dutySchedule:edit` - 编辑值班记录
+  - `manage:dutySchedule:remove` - 删除值班记录
+  - `manage:dutyTimeConfig:list` - 查看值班时间配置
+  - `manage:dutyTimeConfig:query` - 查询值班时间配置详情
+  - `manage:dutyTimeConfig:add` - 添加值班时间配置
+  - `manage:dutyTimeConfig:edit` - 编辑值班时间配置
+  - `manage:dutyTimeConfig:remove` - 删除值班时间配置
+  - `manage:venue:list` - 查看场馆列表
+  - `manage:venue:query` - 查询场馆详情
 
 ## 性能优化
 
