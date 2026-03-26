@@ -2,6 +2,7 @@ package com.zcst.manage.domain;
 
 import com.zcst.common.core.domain.BaseEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
@@ -12,6 +13,7 @@ import java.util.Date;
  * @date 2026-03-21
  */
 @Data
+@EqualsAndHashCode(callSuper=true)
 public class DutySchedule extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
@@ -42,6 +44,9 @@ public class DutySchedule extends BaseEntity
 
     /** 备注 */
     private String remark;
+
+    /** 考勤状态（0未打卡 1已打卡） */
+    private String attendanceStatus;
 
     /** 创建时间 */
     private Date createdAt;

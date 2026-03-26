@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.AttendanceRecordMapper">
+    <resultMap type="com.zcst.manage.domain.AttendanceRecord" id="AttendanceRecordResult">
+        <id property="recordId" column="record_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="dutyId" column="duty_id"/>
+        <result property="checkInTime" column="check_in_time"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="selectAttendanceRecordVo">
+        select `record_id`, `student_id`, `duty_id`, `check_in_time`, `status`, `remark`, `created_at`, `updated_at`
+        from attendance_record
+    </sql>
+
+    <select id="selectAttendanceRecordById" parameterType="long" resultMap="AttendanceRecordResult">
+        <include refid="selectAttendanceRecordVo"/>
+        where `record_id` = #{recordId}
+    </select>
+
+    <select id="selectAttendanceRecordList" parameterType="com.zcst.manage.domain.AttendanceRecord" resultMap="AttendanceRecordResult">
+        <include refid="selectAttendanceRecordVo"/>
+        <where>
+            <if test="studentId != null and studentId != ''">
+                and `student_id` = #{studentId}
+            </if>
+            <if test="dutyId != null">
+                and `duty_id` = #{dutyId}
+            </if>
+            <if test="status != null and status != ''">
+                and `status` = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectAttendanceRecordByDutyId" parameterType="integer" resultMap="AttendanceRecordResult">
+        <include refid="selectAttendanceRecordVo"/>
+        where `duty_id` = #{dutyId}
+    </select>
+
+    <select id="selectAttendanceRecordByStudentIdAndMonth" resultMap="AttendanceRecordResult">
+        <include refid="selectAttendanceRecordVo"/>
+        where `student_id` = #{studentId} 
+        and DATE_FORMAT(`check_in_time`, '%Y-%m') = #{yearMonth}
+    </select>
+
+    <select id="selectAttendanceRecordByDutyIds" resultMap="AttendanceRecordResult">
+        <include refid="selectAttendanceRecordVo"/>
+        where `duty_id` in
+        <foreach item="dutyId" collection="dutyIds" open="(" separator="," close=")">
+            #{dutyId}
+        </foreach>
+    </select>
+
+    <insert id="insertAttendanceRecord" parameterType="com.zcst.manage.domain.AttendanceRecord">
+        insert into attendance_record (`student_id`, `duty_id`, `check_in_time`, `status`, `remark`)
+        values (#{studentId}, #{dutyId}, #{checkInTime}, #{status}, #{remark})
+    </insert>
+
+    <update id="updateAttendanceRecord" parameterType="com.zcst.manage.domain.AttendanceRecord">
+        update attendance_record
+        set `student_id` = #{studentId},
+            `duty_id` = #{dutyId},
+            `check_in_time` = #{checkInTime},
+            `status` = #{status},
+            `remark` = #{remark}
+        where `record_id` = #{recordId}
+    </update>
+
+    <delete id="deleteAttendanceRecordById" parameterType="long">
+        delete from attendance_record
+        where `record_id` = #{recordId}
+    </delete>
+
+    <delete id="deleteAttendanceRecordByIds">
+        delete from attendance_record
+        where `record_id` in
+        <foreach item="recordId" collection="array" open="(" separator="," close=")">
+            #{recordId}
+        </foreach>
+    </delete>
+</mapper>

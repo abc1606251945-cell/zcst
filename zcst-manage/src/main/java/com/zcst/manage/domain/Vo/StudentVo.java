@@ -6,6 +6,7 @@ import com.zcst.common.core.domain.entity.SysRole;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper=true)
 public class StudentVo extends Student {
     // 可以在这里添加额外的字段，用于前端展示
     private String collegeName; // 学院名称

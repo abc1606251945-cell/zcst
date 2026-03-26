@@ -61,6 +61,14 @@ public class DutyTimeConfigServiceImpl implements IDutyTimeConfigService
         // 格式化时间，防止前端传ISO格式
         dutyTimeConfig.setStartTime(formatTime(dutyTimeConfig.getStartTime()));
         dutyTimeConfig.setEndTime(formatTime(dutyTimeConfig.getEndTime()));
+        
+        // 检查是否从启用变为禁用
+        DutyTimeConfig oldConfig = dutyTimeConfigMapper.selectDutyTimeConfigByConfigId(dutyTimeConfig.getConfigId());
+        if (oldConfig != null && oldConfig.getIsEnable() == 1 && dutyTimeConfig.getIsEnable() == 0) {
+            // 当从启用变为禁用时，删除该时段的所有值班信息
+            dutyScheduleMapper.deleteDutyScheduleByVenueAndTime(dutyTimeConfig.getVenueId(), normalizeTime(dutyTimeConfig.getStartTime()), normalizeTime(dutyTimeConfig.getEndTime()));
+        }
+        
         return dutyTimeConfigMapper.updateDutyTimeConfig(dutyTimeConfig);
     }
 

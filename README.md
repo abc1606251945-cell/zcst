@@ -71,6 +71,7 @@ zcst-b/
 - **学校学生管理**：各学校学生的专门管理（如笃学、国防、弘毅、思齐、新源、知行等）
 - **值班表管理**：场馆值班表的查看、添加、编辑和删除，支持自动排班功能
 - **值班时间配置**：场馆值班时间的配置和管理
+- **考勤管理**：学生考勤记录的管理和统计，支持按月统计值班时长、打卡次数、出勤次数等，支持按用户角色过滤数据
 
 ### 4. 工具管理
 
@@ -153,6 +154,19 @@ zcst-b/
 7. 后端处理请求，更新数据库
 8. 返回操作结果
 
+### 5. 考勤管理流程
+
+1. 学生登录系统
+2. 进入考勤打卡页面
+3. 扫描二维码或手动打卡
+4. 系统记录打卡时间和状态
+5. 后端处理打卡请求，更新数据库
+6. 场馆管理员登录系统
+7. 进入考勤统计页面
+8. 按月统计学生考勤数据
+9. 查看考勤详细信息
+10. 导出考勤报表
+
 ## 数据库设计
 
 ### 主要表结构
@@ -199,6 +213,7 @@ zcst-b/
 | `start_time` | `DATETIME` | 值班开始时间 |
 | `end_time` | `DATETIME` | 值班结束时间 |
 | `remark` | `VARCHAR(255)` | 备注 |
+| `attendance_status` | `CHAR(1)` | 考勤状态（0正常 1迟到 2早退 3缺勤） |
 | `created_at` | `DATETIME` | 创建时间 |
 | `updated_at` | `DATETIME` | 更新时间 |
 
@@ -211,6 +226,36 @@ zcst-b/
 | `start_time` | `TIME` | 开始时间 |
 | `end_time` | `TIME` | 结束时间 |
 | `is_enable` | `TINYINT` | 是否启用 |
+| `created_at` | `DATETIME` | 创建时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
+
+#### 考勤记录表 (`attendance_record`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `record_id` | `BIGINT` | 记录ID |
+| `student_id` | `VARCHAR(20)` | 学号 |
+| `duty_id` | `INT` | 值班表ID |
+| `check_in_time` | `DATETIME` | 打卡时间 |
+| `status` | `CHAR(1)` | 状态（0正常 1迟到 2早退 3缺勤） |
+| `remark` | `VARCHAR(255)` | 备注 |
+| `created_at` | `DATETIME` | 创建时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
+
+#### 考勤统计表 (`attendance_statistics`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `stat_id` | `BIGINT` | 统计ID |
+| `student_id` | `VARCHAR(20)` | 学号 |
+| `venue_id` | `INT` | 场馆ID |
+| `year_month` | `VARCHAR(7)` | 年月（格式：2026-04） |
+| `total_duty_hours` | `DECIMAL(10,2)` | 值班总时长 |
+| `check_in_count` | `INT` | 打卡次数 |
+| `attendance_count` | `INT` | 出勤次数 |
+| `absence_count` | `INT` | 缺勤次数 |
+| `late_count` | `INT` | 迟到次数 |
+| `early_leave_count` | `INT` | 早退次数 |
 | `created_at` | `DATETIME` | 创建时间 |
 | `updated_at` | `DATETIME` | 更新时间 |
 
