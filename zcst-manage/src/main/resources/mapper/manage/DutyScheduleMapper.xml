@@ -94,7 +94,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             venue_id = #{venueId},
             start_time = #{startTime},
             end_time = #{endTime},
-            remark = #{remark}
+            remark = #{remark},
+            attendance_status = #{attendanceStatus}
         where duty_id = #{dutyId}
     </update>
 
