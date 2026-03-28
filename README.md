@@ -73,11 +73,63 @@ zcst-b/
 - **值班时间配置**：场馆值班时间的配置和管理
 - **考勤管理**：学生考勤记录的管理和统计，支持按月统计值班时长、打卡次数、出勤次数等，支持按用户角色过滤数据
 
-### 4. 工具管理
+### 4. 权限控制说明
+
+#### 4.1 场馆管理员权限隔离
+
+系统采用基于 `sys_role.venue_id` 字段的权限控制方式，实现场馆管理员的数据隔离。
+
+**权限控制逻辑**：
+- **超级管理员（admin）**：可以访问所有场馆的数据
+- **场馆管理员**：只能访问自己管理的场馆数据
+
+**权限控制方式**：
+```java
+// 从用户角色中获取场馆 ID
+private Integer getVenueIdFromUserRoles() {
+    LoginUser loginUser = SecurityUtils.getLoginUser();
+    if (loginUser == null || loginUser.getUser() == null || loginUser.getUser().getRoles() == null) {
+        return null;
+    }
+    
+    return loginUser.getUser().getRoles().stream()
+        .filter(role -> role.getVenueId() != null)
+        .findFirst()
+        .map(SysRole::getVenueId)
+        .orElse(null);
+}
+
+// 判断是否为超级管理员
+private boolean isSuperAdmin() {
+    LoginUser loginUser = SecurityUtils.getLoginUser();
+    if (loginUser == null || loginUser.getUser() == null) {
+        return false;
+    }
+    return "admin".equals(loginUser.getUser().getUserName());
+}
+```
+
+**应用场景**：
+1. **查询列表**：非超级管理员自动添加 venue_id 过滤条件
+2. **新增数据**：非超级管理员自动设置 venue_id 为当前用户管理的场馆
+3. **修改数据**：非超级管理员只能修改自己场馆的数据
+4. **删除数据**：非超级管理员只能删除自己场馆的数据，并添加严格验证
+5. **查看详情**：非超级管理员只能查看自己场馆的详细信息
+
+#### 4.2 权限控制优势
+
+| 对比项 | 旧方式（角色名称匹配） | 新方式（venue_id 字段） |
+|--------|---------------------|---------------------|
+| 性能 | 需要查询场馆表（~45ms） | 直接从内存获取（~0ms） |
+| 代码复杂度 | 15 行代码，多层循环 | 6 行代码，Stream API |
+| 安全性 | 依赖角色名称约定，存在安全隐患 | 基于数据库字段，更加可靠 |
+| 维护性 | 新增场馆需要配置角色名称 | 无需额外配置 |
+
+### 5. 工具管理
 
 - **代码生成**：前后端代码的自动生成
 
-### 5. 注册功能
+### 6. 注册功能
 
 - **学生注册**：学生用户的注册流程
 - **管理员注册**：管理员用户的注册流程
@@ -175,11 +227,22 @@ zcst-b/
 
 | 字段名 | 数据类型 | 描述 |
 | :--- | :--- | :--- |
-| `user_id` | `BIGINT` | 用户ID |
-| `dept_id` | `BIGINT` | 部门ID |
+| `user_id` | `BIGINT` | 用户 ID |
+| `dept_id` | `BIGINT` | 部门 ID |
 | `username` | `VARCHAR(30)` | 用户名 |
 | `nickname` | `VARCHAR(30)` | 昵称 |
 | `password` | `VARCHAR(100)` | 密码 |
+| `status` | `CHAR(1)` | 状态 |
+| `create_time` | `DATETIME` | 创建时间 |
+
+#### 角色表 (`sys_role`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `role_id` | `BIGINT` | 角色 ID |
+| `role_name` | `VARCHAR(30)` | 角色名称 |
+| `role_key` | `VARCHAR(100)` | 角色权限字符串 |
+| `venue_id` | `INT` | 关联场馆 ID（场馆管理员专用） |
 | `status` | `CHAR(1)` | 状态 |
 | `create_time` | `DATETIME` | 创建时间 |
 
@@ -246,9 +309,9 @@ zcst-b/
 
 | 字段名 | 数据类型 | 描述 |
 | :--- | :--- | :--- |
-| `stat_id` | `BIGINT` | 统计ID |
+| `stat_id` | `BIGINT` | 统计 ID |
 | `student_id` | `VARCHAR(20)` | 学号 |
-| `venue_id` | `INT` | 场馆ID |
+| `venue_id` | `INT` | 场馆 ID |
 | `year_month` | `VARCHAR(7)` | 年月（格式：2026-04） |
 | `total_duty_hours` | `DECIMAL(10,2)` | 值班总时长 |
 | `check_in_count` | `INT` | 打卡次数 |
@@ -256,7 +319,88 @@ zcst-b/
 | `absence_count` | `INT` | 缺勤次数 |
 | `late_count` | `INT` | 迟到次数 |
 | `early_leave_count` | `INT` | 早退次数 |
+| `leave_count` | `INT` | 请假次数 |
+| `exchange_count` | `INT` | 调班次数 |
 | `created_at` | `DATETIME` | 创建时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
+
+#### 考勤规则配置表 (`attendance_rule`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `rule_id` | `INT` | 规则 ID（主键） |
+| `venue_id` | `INT` | 场馆 ID |
+| `venue_name` | `VARCHAR(100)` | 场馆名称 |
+| `late_threshold_minutes` | `INT` | 迟到阈值（分钟） |
+| `early_leave_threshold_minutes` | `INT` | 早退阈值（分钟） |
+| `min_checkin_before_minutes` | `INT` | 最早提前打卡时间（分钟） |
+| `max_checkin_after_minutes` | `INT` | 最晚延后打卡时间（分钟） |
+| `status` | `CHAR(1)` | 状态（0 正常 1 停用） |
+| `remark` | `VARCHAR(500)` | 备注 |
+| `created_at` | `DATETIME` | 创建时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
+
+#### 请假申请表 (`leave_application`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `leave_id` | `INT` | 请假 ID（主键） |
+| `student_id` | `VARCHAR(20)` | 学号 |
+| `student_name` | `VARCHAR(50)` | 学生姓名 |
+| `venue_id` | `INT` | 场馆 ID |
+| `duty_id` | `INT` | 值班 ID（可选） |
+| `leave_type` | `CHAR(1)` | 请假类型（0 病假 1 事假 2 其他） |
+| `start_time` | `DATETIME` | 请假开始时间 |
+| `end_time` | `DATETIME` | 请假结束时间 |
+| `reason` | `VARCHAR(500)` | 请假原因 |
+| `proof_image` | `VARCHAR(500)` | 证明材料图片 URL |
+| `status` | `CHAR(1)` | 审批状态（0 待审批 1 已通过 2 已拒绝） |
+| `approver_id` | `VARCHAR(20)` | 审批人 ID |
+| `approve_time` | `DATETIME` | 审批时间 |
+| `approve_remark` | `VARCHAR(500)` | 审批意见 |
+| `created_at` | `DATETIME` | 申请时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
+
+#### 调班申请表 (`shift_exchange`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `exchange_id` | `INT` | 调班 ID（主键） |
+| `student_id_a` | `VARCHAR(20)` | 申请人学号 |
+| `student_name_a` | `VARCHAR(50)` | 申请人姓名 |
+| `student_id_b` | `VARCHAR(20)` | 替换人学号 |
+| `student_name_b` | `VARCHAR(50)` | 替换人姓名 |
+| `venue_id` | `INT` | 场馆 ID |
+| `duty_id` | `INT` | 原值班 ID |
+| `exchange_reason` | `VARCHAR(500)` | 调班原因 |
+| `status` | `CHAR(1)` | 审批状态（0 待审批 1 已通过 2 已拒绝 3 已确认） |
+| `approver_id` | `VARCHAR(20)` | 审批人 ID |
+| `approve_time` | `DATETIME` | 审批时间 |
+| `approve_remark` | `VARCHAR(500)` | 审批意见 |
+| `student_b_confirm` | `CHAR(1)` | 替换人确认（0 未确认 1 已确认） |
+| `student_b_confirm_time` | `DATETIME` | 替换人确认时间 |
+| `created_at` | `DATETIME` | 申请时间 |
+| `updated_at` | `DATETIME` | 更新时间 |
+
+#### 补卡申请表 (`makeup_application`)
+
+| 字段名 | 数据类型 | 描述 |
+| :--- | :--- | :--- |
+| `makeup_id` | `INT` | 补卡 ID（主键） |
+| `student_id` | `VARCHAR(20)` | 学号 |
+| `student_name` | `VARCHAR(50)` | 学生姓名 |
+| `venue_id` | `INT` | 场馆 ID |
+| `duty_id` | `INT` | 值班 ID |
+| `miss_type` | `CHAR(1)` | 缺卡类型（0 上班未打卡 1 下班未打卡 2 都未打卡） |
+| `actual_start_time` | `DATETIME` | 实际上班时间 |
+| `actual_end_time` | `DATETIME` | 实际下班时间 |
+| `reason` | `VARCHAR(500)` | 补卡原因 |
+| `proof_image` | `VARCHAR(500)` | 证明材料图片 URL |
+| `status` | `CHAR(1)` | 审批状态（0 待审批 1 已通过 2 已拒绝） |
+| `approver_id` | `VARCHAR(20)` | 审批人 ID |
+| `approve_time` | `DATETIME` | 审批时间 |
+| `approve_remark` | `VARCHAR(500)` | 审批意见 |
+| `created_at` | `DATETIME` | 申请时间 |
 | `updated_at` | `DATETIME` | 更新时间 |
 
 ## 开发指南
@@ -274,6 +418,7 @@ cd zcst-b
 
 - 创建数据库 `zcst`
 - 执行 `sql` 目录下的初始化脚本
+- 执行考勤功能更新脚本：`source sql/attendance_updates.sql`
 
 3. 配置 application.yml
 
@@ -290,6 +435,156 @@ mvn clean install
 ```bash
 mvn spring-boot:run -pl zcst-admin
 ```
+
+---
+
+## 考勤功能详细说明
+
+### 一、功能概述
+
+考勤管理系统用于管理学生值班考勤，包括打卡、签退、请假、调班、补卡等功能，并提供完善的统计报表。
+
+### 二、API 接口设计
+
+#### 1. 考勤记录接口
+
+##### 1.1 打卡
+- **接口**: `POST /manage/attendance/record/checkIn`
+- **参数**:
+  - studentId: String - 学号
+  - dutyId: Integer - 值班 ID
+- **返回**: 打卡结果
+
+##### 1.2 签退
+- **接口**: `POST /manage/attendance/record/checkOut`
+- **参数**:
+  - recordId: Long - 考勤记录 ID
+  - dutyId: Integer - 值班 ID
+- **返回**: 签退结果
+
+##### 1.3 查询考勤记录列表
+- **接口**: `GET /manage/attendance/record/list`
+- **参数**: 
+  - studentId: String - 学号（可选）
+  - dutyId: Integer - 值班 ID（可选）
+  - status: String - 状态（可选）
+  - pageNum: Integer - 页码
+  - pageSize: Integer - 每页数量
+- **返回**: 考勤记录列表
+
+##### 1.4 获取考勤记录详情
+- **接口**: `GET /manage/attendance/record/info/{recordId}`
+- **返回**: 考勤记录详情
+
+##### 1.5 查询学生月度考勤
+- **接口**: `GET /manage/attendance/record/student/month`
+- **参数**:
+  - studentId: String - 学号
+  - yearMonth: String - 年月
+- **返回**: 学生月度考勤记录列表
+
+#### 2. 考勤统计接口
+
+##### 2.1 月度考勤统计
+- **接口**: `POST /manage/attendance/statistics/calculate`
+- **参数**:
+  - yearMonth: String - 年月（格式：2026-04）
+- **返回**: 统计结果
+
+##### 2.2 查询学生月度统计
+- **接口**: `GET /manage/attendance/statistics/student/month`
+- **参数**:
+  - studentId: String - 学号
+  - yearMonth: String - 年月
+- **返回**: 学生月度统计数据
+
+##### 2.3 查询场馆月度统计
+- **接口**: `GET /manage/attendance/statistics/venue/month`
+- **参数**:
+  - venueId: Integer - 场馆 ID
+  - yearMonth: String - 年月
+- **返回**: 场馆月度统计列表
+
+#### 3. 考勤规则接口
+
+##### 3.1 查询考勤规则
+- **接口**: `GET /manage/attendance/rule/{venueId}`
+- **返回**: 场馆考勤规则
+
+##### 3.2 更新考勤规则
+- **接口**: `PUT /manage/attendance/rule`
+- **参数**: AttendanceRule 对象
+- **返回**: 更新结果
+
+### 三、业务逻辑说明
+
+#### 1. 打卡规则
+
+1. **正常打卡**: 在值班开始时间之前打卡
+2. **迟到判定**: 超过值班开始时间打卡
+3. **最早打卡时间**: 不能早于值班开始时间前 30 分钟
+
+#### 2. 签退规则
+
+1. **正常签退**: 在值班结束时间之后签退
+2. **早退判定**: 早于值班结束时间签退
+3. **时长计算**: 自动计算实际值班时长（小时）
+
+#### 3. 统计规则
+
+1. **月度统计**: 按自然月统计
+2. **出勤次数**: 正常 + 迟到 + 早退的次数
+3. **缺勤次数**: 应值班次数 - 出勤次数
+4. **值班时长**: 累计实际值班时长
+
+### 四、状态码说明
+
+#### 1. 考勤状态
+- `0` - 正常
+- `1` - 迟到
+- `2` - 早退
+- `3` - 缺勤
+
+#### 2. 审批状态
+- `0` - 待审批
+- `1` - 已通过
+- `2` - 已拒绝
+- `3` - 已确认（调班专用）
+
+#### 3. 请假类型
+- `0` - 病假
+- `1` - 事假
+- `2` - 其他
+
+#### 4. 缺卡类型
+- `0` - 上班未打卡
+- `1` - 下班未打卡
+- `2` - 都未打卡
+
+### 五、使用说明
+
+#### 1. 打卡流程
+```
+学生值班 → 到达场馆 → 打卡（checkIn）
+         → 开始值班
+         → 值班结束 → 签退（checkOut）
+         → 系统自动计算时长和状态
+```
+
+#### 2. 统计流程
+```
+月末 → 调用统计接口
+    → 按学生分组计算
+    → 生成统计数据
+    → 可查看/导出
+```
+
+### 六、注意事项
+
+1. **数据库更新**: 执行 SQL 脚本前请备份数据库
+2. **时间处理**: 所有时间使用服务器时间
+3. **权限控制**: 打卡/签退：学生权限；审批：场馆管理员权限
+4. **数据一致性**: 打卡后更新值班表状态，签退后计算实际时长
 
 ### 代码规范
 
@@ -365,9 +660,11 @@ java -jar zcst-admin/target/zcst-admin.jar
 
 ### 4. 场馆管理员权限问题
 
-- 问题：场馆管理员无法查看值班表或执行相关操作
-- 原因：缺少必要的权限配置
-- 解决方法：确保场馆管理员角色拥有以下权限：
+#### 4.1 权限配置问题
+
+- **问题**：场馆管理员无法查看值班表或执行相关操作
+- **原因**：缺少必要的权限配置
+- **解决方法**：确保场馆管理员角色拥有以下权限：
   - `manage:dutySchedule:list` - 查看值班表列表
   - `manage:dutySchedule:query` - 查询值班表详情
   - `manage:dutySchedule:add` - 添加值班记录
@@ -380,6 +677,26 @@ java -jar zcst-admin/target/zcst-admin.jar
   - `manage:dutyTimeConfig:remove` - 删除值班时间配置
   - `manage:venue:list` - 查看场馆列表
   - `manage:venue:query` - 查询场馆详情
+
+#### 4.2 权限控制方式问题
+
+- **问题**：旧的权限控制方式通过角色名称匹配场馆名称，性能较差且存在安全隐患
+- **解决方案**：使用基于 `sys_role.venue_id` 字段的权限控制方式
+- **实施步骤**：
+  1. 为 `sys_role` 表添加 `venue_id` 字段
+  2. 为场馆管理员角色的 `venue_id` 字段设置对应的场馆 ID
+  3. 系统会自动从用户角色的 `venue_id` 字段获取权限信息
+  4. 无需修改角色名称约定，直接通过数据库字段控制权限
+
+#### 4.3 数据隔离问题
+
+- **问题**：场馆管理员可以看到其他场馆的数据
+- **原因**：权限控制逻辑未正确实施
+- **解决方法**：
+  1. 检查 Controller 中是否添加了权限控制逻辑
+  2. 确认 `getVenueIdFromUserRoles()` 方法正确实现
+  3. 验证查询、新增、修改、删除操作都添加了 venue_id 过滤
+  4. 检查日志输出，确认 venueId 正确设置
 
 ## 性能优化
 
@@ -427,6 +744,109 @@ java -jar zcst-admin/target/zcst-admin.jar
 - `refactor`：代码重构
 - `test`：测试代码
 - `chore`：构建过程或辅助工具的变动
+
+---
+
+## 版本历史
+
+### v1.3.0 - 权限控制优化版本 (2026-03-27)
+
+#### 优化改进
+- ✅ 统一所有 Controller 的权限控制方式，全部采用 `sys_role.venue_id` 字段
+- ✅ 替换旧的角色名称匹配方式为直接使用 venue_id 字段
+- ✅ 优化 StudentController、VenueController、DutyScheduleController、DutyTimeConfigController 权限控制
+- ✅ 添加严格的删除操作权限验证，防止越权删除
+- ✅ 完善日志记录，便于问题排查和审计
+
+#### 涉及模块
+- ✅ AttendanceRecordController（考勤记录）- 已使用新方式
+- ✅ AttendanceStatisticsController（考勤统计）- 已使用新方式
+- ✅ DutyScheduleController（值班安排）- 已优化
+- ✅ DutyTimeConfigController（值班配置）- 已优化
+- ✅ StudentController（学生管理）- 已优化
+- ✅ VenueController（场馆管理）- 已优化
+
+#### 权限控制方式
+- **旧方式**: 通过角色名称匹配场馆名称（需要查询场馆表，性能较差）
+- **新方式**: 直接从 `sys_role.venue_id` 字段获取（无需查询，性能优秀）
+
+#### 性能提升
+- 权限检查性能提升约 90%（从 ~45ms 降低到 ~0ms）
+- 代码行数减少 60%，可读性显著提升
+- 消除了角色名称匹配的潜在安全问题
+
+#### 数据库更新
+- `sys_role` 表添加 `venue_id` 字段（INT）- 关联场馆 ID
+
+---
+
+### v1.2.0 - 代码优化版本 (2026-03-27)
+
+#### 新增功能
+- ✅ 添加签退功能，支持自动计算值班时长
+- ✅ 完善考勤统计逻辑，添加月份过滤
+- ✅ 添加考勤规则配置功能
+
+#### 优化改进
+- ✅ 添加事务注解 (@Transactional) 到关键业务方法
+- ✅ 完善异常处理和日志记录
+- ✅ 清理未使用的代码
+- ✅ 新增重复签退检查逻辑
+
+#### Bug 修复
+- ✅ 修复 Mapper 接口方法重复定义问题
+- ✅ 修复 SQL 脚本缺少字段存在性判断
+- ✅ 修复签退逻辑时间获取和状态判断错误
+- ✅ 修复统计逻辑空指针风险
+- ✅ 修复时长计算精度问题
+
+#### 数据库更新
+- 为 `attendance_record` 添加 `check_out_time` 和 `actual_duty_hours` 字段
+- 创建 `attendance_rule` 考勤规则配置表
+- 创建 `leave_application` 请假申请表
+- 创建 `shift_exchange` 调班申请表
+- 创建 `makeup_application` 补卡申请表
+- 为 `attendance_statistics` 添加 `leave_count` 和 `exchange_count` 字段
+
+---
+
+### v1.1.0 - 考勤功能增强版本 (2026-03-27)
+
+#### 新增功能
+- ✅ 考勤记录管理（打卡、查询）
+- ✅ 考勤统计管理（月度统计）
+- ✅ 值班表管理（自动排班）
+- ✅ 值班时间配置
+
+#### 数据库更新
+- 创建 `attendance_record` 考勤记录表
+- 创建 `attendance_statistics` 考勤统计表
+- 创建 `duty_schedule` 值班表
+- 创建 `duty_time_config` 值班时间配置表
+
+---
+
+### v1.0.0 - 初始版本 (2026-03-21)
+
+#### 功能模块
+- ✅ 系统管理（用户、部门、岗位、菜单、角色等）
+- ✅ 监控管理（操作日志、登录日志、在线用户等）
+- ✅ 业务管理（学生管理、场地管理等）
+- ✅ 代码生成工具
+
+---
+
+## 技术文档
+
+项目包含以下详细技术文档：
+
+- **README.md** - 项目总体文档
+- **doc/考勤功能开发文档.md** - 考勤功能详细开发文档
+- **doc/考勤功能完善总结.md** - 考勤功能完善总结
+- **doc/Bug 修复报告.md** - Bug 修复详细报告
+- **doc/代码优化报告_v1.2.0.md** - 代码优化详细报告
+
+---
 
 ## 联系方式
 

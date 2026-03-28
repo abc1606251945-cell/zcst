@@ -31,6 +31,9 @@ public class SysRole extends BaseEntity
     @Excel(name = "角色权限")
     private String roleKey;
 
+    /** 关联场馆 ID（场馆管理员使用） */
+    private Integer venueId;
+
     /** 角色排序 */
     @Excel(name = "角色排序")
     private Integer roleSort;
@@ -116,6 +119,16 @@ public class SysRole extends BaseEntity
     public void setRoleKey(String roleKey)
     {
         this.roleKey = roleKey;
+    }
+
+    public Integer getVenueId()
+    {
+        return venueId;
+    }
+
+    public void setVenueId(Integer venueId)
+    {
+        this.venueId = venueId;
     }
 
     @NotNull(message = "显示顺序不能为空")
@@ -225,6 +238,7 @@ public class SysRole extends BaseEntity
             .append("roleId", getRoleId())
             .append("roleName", getRoleName())
             .append("roleKey", getRoleKey())
+            .append("venueId", getVenueId())
             .append("roleSort", getRoleSort())
             .append("dataScope", getDataScope())
             .append("menuCheckStrictly", isMenuCheckStrictly())

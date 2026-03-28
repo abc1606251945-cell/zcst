@@ -7,7 +7,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <id property="recordId" column="record_id"/>
         <result property="studentId" column="student_id"/>
         <result property="dutyId" column="duty_id"/>
+        <result property="venueId" column="venue_id"/>
         <result property="checkInTime" column="check_in_time"/>
+        <result property="checkOutTime" column="check_out_time"/>
+        <result property="actualDutyHours" column="actual_duty_hours"/>
         <result property="status" column="status"/>
         <result property="remark" column="remark"/>
         <result property="createdAt" column="created_at"/>
@@ -15,8 +18,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectAttendanceRecordVo">
-        select `record_id`, `student_id`, `duty_id`, `check_in_time`, `status`, `remark`, `created_at`, `updated_at`
-        from attendance_record
+        select a.`record_id`, a.`student_id`, a.`duty_id`, d.`venue_id`, a.`check_in_time`, a.`check_out_time`, a.`actual_duty_hours`, a.`status`, a.`remark`, a.`created_at`, a.`updated_at`
+        from attendance_record a
+        left join duty_schedule d on a.duty_id = d.duty_id
     </sql>
 
     <select id="selectAttendanceRecordById" parameterType="long" resultMap="AttendanceRecordResult">
@@ -28,13 +32,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectAttendanceRecordVo"/>
         <where>
             <if test="studentId != null and studentId != ''">
-                and `student_id` = #{studentId}
+                and a.`student_id` = #{studentId}
             </if>
             <if test="dutyId != null">
-                and `duty_id` = #{dutyId}
+                and a.`duty_id` = #{dutyId}
+            </if>
+            <if test="venueId != null">
+                and d.`venue_id` = #{venueId}
             </if>
             <if test="status != null and status != ''">
-                and `status` = #{status}
+                and a.`status` = #{status}
             </if>
         </where>
     </select>
@@ -65,11 +72,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <update id="updateAttendanceRecord" parameterType="com.zcst.manage.domain.AttendanceRecord">
         update attendance_record
-        set `student_id` = #{studentId},
-            `duty_id` = #{dutyId},
-            `check_in_time` = #{checkInTime},
-            `status` = #{status},
-            `remark` = #{remark}
+        <set>
+            <if test="studentId != null">`student_id` = #{studentId},</if>
+            <if test="dutyId != null">`duty_id` = #{dutyId},</if>
+            <if test="checkInTime != null">`check_in_time` = #{checkInTime},</if>
+            <if test="checkOutTime != null">`check_out_time` = #{checkOutTime},</if>
+            <if test="actualDutyHours != null">`actual_duty_hours` = #{actualDutyHours},</if>
+            <if test="status != null">`status` = #{status},</if>
+            <if test="remark != null">`remark` = #{remark},</if>
+            <if test="updatedAt != null">`updated_at` = #{updatedAt},</if>
+        </set>
         where `record_id` = #{recordId}
     </update>
 

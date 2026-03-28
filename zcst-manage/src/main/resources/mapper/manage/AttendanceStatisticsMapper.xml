@@ -14,12 +14,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="absenceCount" column="absence_count"/>
         <result property="lateCount" column="late_count"/>
         <result property="earlyLeaveCount" column="early_leave_count"/>
+        <result property="leaveCount" column="leave_count"/>
+        <result property="exchangeCount" column="exchange_count"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <sql id="selectAttendanceStatisticsVo">
-        select `stat_id`, `student_id`, `venue_id`, `year_month`, `total_duty_hours`, `check_in_count`, `attendance_count`, `absence_count`, `late_count`, `early_leave_count`, `created_at`, `updated_at`
+        select `stat_id`, `student_id`, `venue_id`, `year_month`, `total_duty_hours`, `check_in_count`, `attendance_count`, `absence_count`, `late_count`, `early_leave_count`, `leave_count`, `exchange_count`, `created_at`, `updated_at`
         from attendance_statistics
     </sql>
 
@@ -54,8 +56,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <insert id="insertAttendanceStatistics" parameterType="com.zcst.manage.domain.AttendanceStatistics">
-        insert into attendance_statistics (`student_id`, `venue_id`, `year_month`, `total_duty_hours`, `check_in_count`, `attendance_count`, `absence_count`, `late_count`, `early_leave_count`)
-        values (#{studentId}, #{venueId}, #{yearMonth}, #{totalDutyHours}, #{checkInCount}, #{attendanceCount}, #{absenceCount}, #{lateCount}, #{earlyLeaveCount})
+        insert into attendance_statistics (`student_id`, `venue_id`, `year_month`, `total_duty_hours`, `check_in_count`, `attendance_count`, `absence_count`, `late_count`, `early_leave_count`, `leave_count`, `exchange_count`)
+        values (#{studentId}, #{venueId}, #{yearMonth}, #{totalDutyHours}, #{checkInCount}, #{attendanceCount}, #{absenceCount}, #{lateCount}, #{earlyLeaveCount}, #{leaveCount}, #{exchangeCount})
     </insert>
 
     <update id="updateAttendanceStatistics" parameterType="com.zcst.manage.domain.AttendanceStatistics">
@@ -68,7 +70,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             `attendance_count` = #{attendanceCount},
             `absence_count` = #{absenceCount},
             `late_count` = #{lateCount},
-            `early_leave_count` = #{earlyLeaveCount}
+            `early_leave_count` = #{earlyLeaveCount},
+            `leave_count` = #{leaveCount},
+            `exchange_count` = #{exchangeCount}
         where `stat_id` = #{statId}
     </update>
 

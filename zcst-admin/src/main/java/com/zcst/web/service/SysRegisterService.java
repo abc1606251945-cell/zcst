@@ -79,15 +79,18 @@ public class SysRegisterService
         String msg = "";
         String studentId = registerBody.getStudentId();
         String password = registerBody.getPassword();
+        String name = registerBody.getName();
 
         if (StringUtils.isEmpty(studentId)) {
             msg = "学号不能为空";
         } else if (StringUtils.isEmpty(password)) {
             msg = "用户密码不能为空";
+        } else if (StringUtils.isEmpty(name)) {
+            msg = "姓名不能为空";
         } else if (studentId.length() < 6 || studentId.length() > 20) {
-            msg = "学号长度必须在6到20个字符之间";
+            msg = "学号长度必须在 6 到 20 个字符之间";
         } else if (password.length() < 6) {
-            msg = "密码长度必须至少6位";
+            msg = "密码长度必须至少 6 位";
         } else {
             // 检查学号是否已存在
             StudentVo studentVo = studentService.selectStudentByStudentId(studentId);
@@ -97,7 +100,7 @@ public class SysRegisterService
                 // 创建学生对象
                 Student newStudent = new Student();
                 newStudent.setStudentId(studentId);
-                newStudent.setName(studentId); // 临时使用学号作为姓名，后续在信息完善页面修改
+                newStudent.setName(name); // 使用用户输入的姓名
                 newStudent.setGender("男"); // 临时默认值，后续在信息完善页面修改
                 newStudent.setPhone("13800138000"); // 临时默认值，后续在信息完善页面修改
                 newStudent.setVenueId(1L); // 临时默认值，后续在信息完善页面修改

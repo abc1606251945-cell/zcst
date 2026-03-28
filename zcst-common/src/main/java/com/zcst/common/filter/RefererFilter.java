@@ -1,6 +1,7 @@
 package com.zcst.common.filter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import jakarta.servlet.Filter;
@@ -11,6 +12,7 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.zcst.common.utils.StringUtils;
 
 /**
  * 防盗链过滤器
@@ -28,7 +30,14 @@ public class RefererFilter implements Filter
     public void init(FilterConfig filterConfig) throws ServletException
     {
         String domains = filterConfig.getInitParameter("allowedDomains");
-        this.allowedDomains = Arrays.asList(domains.split(","));
+        if (StringUtils.isNotEmpty(domains))
+        {
+            this.allowedDomains = Arrays.asList(domains.split(","));
+        }
+        else
+        {
+            this.allowedDomains = new ArrayList<>();
+        }
     }
 
     @Override
@@ -44,6 +53,13 @@ public class RefererFilter implements Filter
         if (referer == null || referer.isEmpty())
         {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied: Referer header is required");
+            return;
+        }
+
+        // 如果允许的域名列表为空，直接放行
+        if (allowedDomains == null || allowedDomains.isEmpty())
+        {
+            chain.doFilter(request, response);
             return;
         }
 

@@ -24,9 +24,14 @@ import com.zcst.manage.service.IStudentService;
 import com.zcst.common.utils.poi.ExcelUtil;
 import com.zcst.common.core.page.TableDataInfo;
 import com.zcst.common.core.page.PageDomain;
+import com.zcst.common.utils.SecurityUtils;
+import com.zcst.common.core.domain.model.LoginUser;
+import com.zcst.common.core.domain.entity.SysRole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * 学生管理Controller
+ * 学生管理 Controller
  * 
  * @author zcst
  * @date 2026-03-18
@@ -35,11 +40,41 @@ import com.zcst.common.core.page.PageDomain;
 @RequestMapping("/manage/student")
 public class StudentController extends BaseController
 {
+    private static final Logger log = LoggerFactory.getLogger(StudentController.class);
+    
     @Autowired
     private IStudentService studentService;
     
     @Autowired
     private StudentMapper studentMapper;
+    
+    /**
+     * 从用户角色中获取场馆 ID
+     * 使用 sys_role 表的 venue_id 字段
+     */
+    private Integer getVenueIdFromUserRoles() {
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        if (loginUser == null || loginUser.getUser() == null || loginUser.getUser().getRoles() == null) {
+            return null;
+        }
+        
+        return loginUser.getUser().getRoles().stream()
+            .filter(role -> role.getVenueId() != null)
+            .findFirst()
+            .map(SysRole::getVenueId)
+            .orElse(null);
+    }
+    
+    /**
+     * 判断当前用户是否为超级管理员
+     */
+    private boolean isSuperAdmin() {
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        if (loginUser == null || loginUser.getUser() == null) {
+            return false;
+        }
+        return "admin".equals(loginUser.getUser().getUserName());
+    }
 
     /**
      * 查询学生管理列表
@@ -48,6 +83,14 @@ public class StudentController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(Student student)
     {
+        // 非超级管理员只能查看自己场馆的学生
+        if (!isSuperAdmin()) {
+            Integer venueId = getVenueIdFromUserRoles();
+            if (venueId != null) {
+                student.setVenueId(venueId.longValue());
+                log.info("场馆管理员查询学生列表，venueId: {}", venueId);
+            }
+        }
         PageDomain pageDomain = getPageDomain();
         PageInfo<StudentVo> pageInfo = studentService.selectStudentListWithPage(student, pageDomain.getPageNum(), pageDomain.getPageSize());
         return getDataTable(pageInfo.getList(), pageInfo.getTotal());
@@ -61,6 +104,14 @@ public class StudentController extends BaseController
     @PostMapping("/export")
     public void export(HttpServletResponse response, Student student)
     {
+        // 非超级管理员只能导出自己场馆的学生
+        if (!isSuperAdmin()) {
+            Integer venueId = getVenueIdFromUserRoles();
+            if (venueId != null) {
+                student.setVenueId(venueId.longValue());
+                log.info("场馆管理员导出学生列表，venueId: {}", venueId);
+            }
+        }
         List<StudentVo> list = studentService.selectStudentList(student);
         ExcelUtil<StudentVo> util = new ExcelUtil<StudentVo>(StudentVo.class);
         util.exportExcel(response, list, "学生管理数据");
@@ -84,6 +135,14 @@ public class StudentController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody Student student)
     {
+        // 非超级管理员添加学生时自动设置场馆 ID
+        if (!isSuperAdmin()) {
+            Integer venueId = getVenueIdFromUserRoles();
+            if (venueId != null) {
+                student.setVenueId(venueId.longValue());
+                log.info("场馆管理员添加学生，venueId: {}", venueId);
+            }
+        }
         // 检查学号是否已存在
         if (studentMapper.selectStudentByStudentId(student.getStudentId()) != null) {
             return AjaxResult.error("学号已存在，请重新输入");
@@ -99,6 +158,14 @@ public class StudentController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody Student student)
     {
+        // 非超级管理员只能修改自己场馆的学生
+        if (!isSuperAdmin()) {
+            Integer venueId = getVenueIdFromUserRoles();
+            if (venueId != null) {
+                student.setVenueId(venueId.longValue());
+                log.info("场馆管理员修改学生，venueId: {}", venueId);
+            }
+        }
         return toAjax(studentService.updateStudent(student));
     }
 
@@ -110,6 +177,20 @@ public class StudentController extends BaseController
 	@DeleteMapping("/{studentIds}")
     public AjaxResult remove(@PathVariable String[] studentIds)
     {
+        // 非超级管理员只能删除自己场馆的学生
+        if (!isSuperAdmin()) {
+            Integer venueId = getVenueIdFromUserRoles();
+            if (venueId != null) {
+                // 验证要删除的学生是否属于本场馆
+                for (String studentId : studentIds) {
+                    Student student = studentMapper.selectStudentByStudentId(studentId);
+                    if (student != null && !venueId.equals(student.getVenueId().intValue())) {
+                        return AjaxResult.error("无权限删除其他场馆的学生");
+                    }
+                }
+                log.info("场馆管理员删除学生，venueId: {}", venueId);
+            }
+        }
         return toAjax(studentService.deleteStudentByStudentIds(studentIds));
     }
 

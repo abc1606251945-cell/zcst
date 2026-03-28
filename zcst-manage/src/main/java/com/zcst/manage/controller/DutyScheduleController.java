@@ -18,6 +18,8 @@ import com.zcst.common.enums.BusinessType;
 import com.zcst.common.utils.DateUtils;
 import com.zcst.common.utils.SecurityUtils;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,6 +49,7 @@ import java.util.List;
 @RequestMapping("/manage/dutySchedule")
 public class DutyScheduleController extends BaseController
 {
+    private static final Logger log = LoggerFactory.getLogger(DutyScheduleController.class);
     @Autowired
     private IDutyScheduleService dutyScheduleService;
 
@@ -57,21 +60,53 @@ public class DutyScheduleController extends BaseController
      * 判断是否为超级管理员
      */
     private boolean isSuperAdmin(SysUser user) {
-        // 超级管理员用户ID通常为1，或者拥有admin角色
+        // 超级管理员用户 ID 通常为 1，或者拥有 admin 角色
         return user.getUserId() == 1L || SecurityUtils.isAdmin(user.getUserId());
     }
 
     /**
-     * 根据角色名称获取场馆ID
+     * 从用户角色中获取场馆 ID
+     * 使用 sys_role 表的 venue_id 字段
+     */
+    private Integer getVenueIdFromUserRoles(SysUser user) {
+        if (user == null || user.getRoles() == null) {
+            return null;
+        }
+        
+        return user.getRoles().stream()
+            .filter(role -> role.getVenueId() != null)
+            .findFirst()
+            .map(role -> role.getVenueId())
+            .orElse(null);
+    }
+
+    /**
+     * 根据角色名称获取场馆 ID（旧方法，保留以兼容旧代码）
+     * 通过角色名称匹配场馆名称来获取场馆 ID
+     * 
+     * @param roleName 角色名称
+     * @return 场馆 ID，如果匹配失败返回 null
      */
     private Integer getVenueIdByRoleName(String roleName) {
-        // 获取所有场馆
-        List<Venue> venues = venueService.selectVenueList(new Venue());
-        for (Venue venue : venues) {
-            if (roleName.contains(venue.getVenueName())) {
-                return venue.getVenueId().intValue();
-            }
+        if (roleName == null || roleName.isEmpty()) {
+            return null;
         }
+        
+        // 从角色名称中提取场馆信息
+        if (roleName.contains("siqi")) {
+            return 1; // 思齐馆
+        } else if (roleName.contains("hongyi")) {
+            return 2; // 弘毅馆
+        } else if (roleName.contains("xinyuan")) {
+            return 3; // 心缘馆
+        } else if (roleName.contains("duxue")) {
+            return 4; // 笃学馆
+        } else if (roleName.contains("zhixing")) {
+            return 5; // 知行馆
+        } else if (roleName.contains("guofang")) {
+            return 6; // 国防教育体验馆
+        }
+        
         return null;
     }
 
@@ -119,24 +154,16 @@ public class DutyScheduleController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(DutySchedule dutySchedule)
     {
-        // 获取当前用户的场馆ID
+        // 获取当前用户
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        
         // 非超级管理员只能查看自己场馆的值班信息
         if (!isSuperAdmin(currentUser)) {
-            // 尝试从用户角色中获取场馆信息
-            List<SysRole> roles = currentUser.getRoles();
-            if (roles != null) {
-                for (SysRole role : roles) {
-                    String roleName = role.getRoleName();
-                    if (roleName.contains("管理员")) {
-                        // 从角色名称中提取场馆ID
-                        Integer venueId = getVenueIdByRoleName(roleName);
-                        if (venueId != null) {
-                            dutySchedule.setVenueId(venueId);
-                        }
-                        break;
-                    }
-                }
+            // 从用户角色中获取场馆 ID
+            Integer venueId = getVenueIdFromUserRoles(currentUser);
+            if (venueId != null) {
+                dutySchedule.setVenueId(venueId);
+                log.info("场馆管理员查询值班安排，venueId: {}", venueId);
             }
         }
         startPage();
@@ -152,22 +179,11 @@ public class DutyScheduleController extends BaseController
     public AjaxResult getInfo(@PathVariable("dutyId") Integer dutyId)
     {
         DutySchedule dutySchedule = dutyScheduleService.selectDutyScheduleByDutyId(dutyId);
+        
         // 验证权限：非超级管理员只能查看自己场馆的值班信息
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         if (!isSuperAdmin(currentUser)) {
-            // 尝试从用户角色中获取场馆信息
-            Integer userVenueId = null;
-            List<SysRole> roles = currentUser.getRoles();
-            if (roles != null) {
-                for (SysRole role : roles) {
-                    String roleName = role.getRoleName();
-                    if (roleName.contains("管理员")) {
-                        // 从角色名称中提取场馆ID
-                        userVenueId = getVenueIdByRoleName(roleName);
-                        break;
-                    }
-                }
-            }
+            Integer userVenueId = getVenueIdFromUserRoles(currentUser);
             if (userVenueId != null && !userVenueId.equals(dutySchedule.getVenueId())) {
                 return AjaxResult.error("无权限查看其他场馆的值班信息");
             }
@@ -186,19 +202,7 @@ public class DutyScheduleController extends BaseController
         // 验证权限：非超级管理员只能添加自己场馆的值班信息
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         if (!isSuperAdmin(currentUser)) {
-            // 尝试从用户角色中获取场馆信息
-            Integer userVenueId = null;
-            List<SysRole> roles = currentUser.getRoles();
-            if (roles != null) {
-                for (SysRole role : roles) {
-                    String roleName = role.getRoleName();
-                    if (roleName.contains("管理员")) {
-                        // 从角色名称中提取场馆ID
-                        userVenueId = getVenueIdByRoleName(roleName);
-                        break;
-                    }
-                }
-            }
+            Integer userVenueId = getVenueIdFromUserRoles(currentUser);
             if (userVenueId != null && !userVenueId.equals(dutySchedule.getVenueId())) {
                 return AjaxResult.error("无权限添加其他场馆的值班信息");
             }
@@ -218,19 +222,7 @@ public class DutyScheduleController extends BaseController
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         DutySchedule oldDuty = dutyScheduleService.selectDutyScheduleByDutyId(dutySchedule.getDutyId());
         if (!isSuperAdmin(currentUser)) {
-            // 尝试从用户角色中获取场馆信息
-            Integer userVenueId = null;
-            List<SysRole> roles = currentUser.getRoles();
-            if (roles != null) {
-                for (SysRole role : roles) {
-                    String roleName = role.getRoleName();
-                    if (roleName.contains("管理员")) {
-                        // 从角色名称中提取场馆ID
-                        userVenueId = getVenueIdByRoleName(roleName);
-                        break;
-                    }
-                }
-            }
+            Integer userVenueId = getVenueIdFromUserRoles(currentUser);
             if (userVenueId != null && !userVenueId.equals(oldDuty.getVenueId())) {
                 return AjaxResult.error("无权限修改其他场馆的值班信息");
             }
@@ -249,19 +241,7 @@ public class DutyScheduleController extends BaseController
         // 验证权限：非超级管理员只能删除自己场馆的值班信息
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         if (!isSuperAdmin(currentUser)) {
-            // 尝试从用户角色中获取场馆信息
-            Integer userVenueId = null;
-            List<SysRole> roles = currentUser.getRoles();
-            if (roles != null) {
-                for (SysRole role : roles) {
-                    String roleName = role.getRoleName();
-                    if (roleName.contains("管理员")) {
-                        // 从角色名称中提取场馆ID
-                        userVenueId = getVenueIdByRoleName(roleName);
-                        break;
-                    }
-                }
-            }
+            Integer userVenueId = getVenueIdFromUserRoles(currentUser);
             if (userVenueId != null) {
                 for (Integer dutyId : dutyIds) {
                     DutySchedule dutySchedule = dutyScheduleService.selectDutyScheduleByDutyId(dutyId);
@@ -288,15 +268,7 @@ public class DutyScheduleController extends BaseController
         // 验证权限：非超级管理员只能查询自己场馆的学生
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         if (!isSuperAdmin(currentUser)) {
-            // 尝试从用户角色中获取场馆信息
-            Integer userVenueId = null;
-            List<SysRole> roles = currentUser.getRoles();
-            if (roles != null) {
-                for (SysRole role : roles) {
-                    userVenueId = getVenueIdByRoleName(role.getRoleName());
-                    if (userVenueId != null) break;
-                }
-            }
+            Integer userVenueId = getVenueIdFromUserRoles(currentUser);
             if (userVenueId != null && !userVenueId.equals(venueId)) {
                 return AjaxResult.error("无权限查询其他场馆的学生");
             }
