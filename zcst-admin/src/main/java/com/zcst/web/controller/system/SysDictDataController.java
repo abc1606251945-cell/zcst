@@ -3,7 +3,7 @@ package com.zcst.web.controller.system;
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,13 +32,12 @@ import com.zcst.system.service.ISysDictTypeService;
  */
 @RestController
 @RequestMapping("/system/dict/data")
+@RequiredArgsConstructor
 public class SysDictDataController extends BaseController
 {
-    @Autowired
-    private ISysDictDataService dictDataService;
+    private final ISysDictDataService dictDataService;
 
-    @Autowired
-    private ISysDictTypeService dictTypeService;
+    private final ISysDictTypeService dictTypeService;
 
     @PreAuthorize("@ss.hasPermi('system:dict:list')")
     @GetMapping("/list")

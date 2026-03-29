@@ -197,6 +197,7 @@
         <module>zcst-generator</module>
         <module>zcst-common</module>
         <module>zcst-manage</module>
+        <module>zcst-upload</module>
     </modules>
     <packaging>pom</packaging>
 

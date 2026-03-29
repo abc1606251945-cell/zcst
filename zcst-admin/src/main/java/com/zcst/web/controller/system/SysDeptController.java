@@ -1,8 +1,8 @@
 package com.zcst.web.controller.system;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,10 +29,10 @@ import com.zcst.system.service.ISysDeptService;
  */
 @RestController
 @RequestMapping("/system/dept")
+@RequiredArgsConstructor
 public class SysDeptController extends BaseController
 {
-    @Autowired
-    private ISysDeptService deptService;
+    private final ISysDeptService deptService;
 
     /**
      * 获取部门列表

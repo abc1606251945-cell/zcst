@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.ShiftExchangeMapper">
+
+    <select id="countByStudentIdAndMonth" resultType="int">
+        select count(*) from shift_exchange
+        where (student_id_a = #{studentId} or student_id_b = #{studentId})
+        and status = '1'
+        and DATE_FORMAT(created_at, '%Y-%m') = #{yearMonth}
+    </select>
+
+</mapper>

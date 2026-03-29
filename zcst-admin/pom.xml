@@ -60,6 +60,13 @@
             <artifactId>zcst-manage</artifactId>
         </dependency>
 
+        <!-- 文件上传模块-->
+        <dependency>
+            <groupId>com.zcst</groupId>
+            <artifactId>zcst-upload</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

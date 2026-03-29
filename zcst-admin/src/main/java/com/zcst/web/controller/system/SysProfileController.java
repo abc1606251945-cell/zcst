@@ -1,7 +1,7 @@
 package com.zcst.web.controller.system;
 
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -33,13 +33,12 @@ import com.zcst.system.service.ISysUserService;
  */
 @RestController
 @RequestMapping("/system/user/profile")
+@RequiredArgsConstructor
 public class SysProfileController extends BaseController
 {
-    @Autowired
-    private ISysUserService userService;
+    private final ISysUserService userService;
 
-    @Autowired
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
     /**
      * 个人信息

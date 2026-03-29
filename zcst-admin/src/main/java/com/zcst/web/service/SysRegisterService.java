@@ -1,6 +1,6 @@
 package com.zcst.web.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import com.zcst.common.constant.CacheConstants;
 import com.zcst.common.constant.Constants;
@@ -28,19 +28,16 @@ import com.zcst.system.service.ISysUserService;
  * @author ruoyi
  */
 @Component
+@RequiredArgsConstructor
 public class SysRegisterService
 {
-    @Autowired
-    private ISysUserService userService;
+    private final ISysUserService userService;
 
-    @Autowired
-    private ISysConfigService configService;
+    private final ISysConfigService configService;
 
-    @Autowired
-    private RedisCache redisCache;
+    private final RedisCache redisCache;
 
-    @Autowired
-    private IStudentService studentService;
+    private final IStudentService studentService;
 
     /**
      * 注册

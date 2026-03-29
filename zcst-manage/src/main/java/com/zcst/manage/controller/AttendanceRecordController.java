@@ -6,6 +6,7 @@ import com.zcst.common.core.domain.entity.SysUser;
 import com.zcst.common.core.page.TableDataInfo;
 import com.zcst.common.utils.SecurityUtils;
 import com.zcst.manage.domain.AttendanceRecord;
+import com.zcst.manage.domain.Vo.AttendanceRecordVo;
 import com.zcst.manage.service.IAttendanceRecordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,8 +77,8 @@ public class AttendanceRecordController extends BaseController {
         
         // 启动分页
         startPage();
-        // 查询考勤记录列表
-        List<AttendanceRecord> list = attendanceRecordService.selectAttendanceRecordList(attendanceRecord);
+        // 查询考勤记录 VO 列表（包含关联信息）
+        List<AttendanceRecordVo> list = attendanceRecordService.selectAttendanceRecordVoList(attendanceRecord);
         return getDataTable(list);
     }
 
@@ -182,7 +183,7 @@ public class AttendanceRecordController extends BaseController {
      */
     @GetMapping("/student/month")
     public AjaxResult getStudentAttendanceByMonth(@RequestParam String studentId, @RequestParam String yearMonth) {
-        List<AttendanceRecord> records = attendanceRecordService.selectAttendanceRecordByStudentIdAndMonth(studentId, yearMonth);
+        List<AttendanceRecordVo> records = attendanceRecordService.selectAttendanceRecordVoByStudentIdAndMonth(studentId, yearMonth);
         return success(records);
     }
 }

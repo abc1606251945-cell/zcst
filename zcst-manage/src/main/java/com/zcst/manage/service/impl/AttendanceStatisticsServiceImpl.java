@@ -1,8 +1,10 @@
 package com.zcst.manage.service.impl;
 
+import com.zcst.manage.constant.AttendanceStatusEnum;
 import com.zcst.manage.domain.AttendanceRecord;
 import com.zcst.manage.domain.AttendanceStatistics;
 import com.zcst.manage.domain.DutySchedule;
+import com.zcst.manage.domain.Vo.AttendanceStatisticsVo;
 import com.zcst.manage.mapper.AttendanceRecordMapper;
 import com.zcst.manage.mapper.AttendanceStatisticsMapper;
 import com.zcst.manage.mapper.DutyScheduleMapper;
@@ -269,15 +271,14 @@ public class AttendanceStatisticsServiceImpl implements IAttendanceStatisticsSer
 
                 // 步骤 5.4：遍历考勤记录，统计各状态次数和总时长
                 for (AttendanceRecord record : attendanceRecords) {
-                    // 统计各状态次数
-                    if ("0".equals(record.getStatus())) {
+                    if (AttendanceStatusEnum.NORMAL.equals(record.getStatus())) {
                         // 正常
                         attendanceCount++;
-                    } else if ("1".equals(record.getStatus())) {
+                    } else if (AttendanceStatusEnum.LATE.equals(record.getStatus())) {
                         // 迟到
                         lateCount++;
                         attendanceCount++;
-                    } else if ("2".equals(record.getStatus())) {
+                    } else if (AttendanceStatusEnum.EARLY_LEAVE.equals(record.getStatus())) {
                         // 早退
                         earlyLeaveCount++;
                         attendanceCount++;
@@ -376,5 +377,40 @@ public class AttendanceStatisticsServiceImpl implements IAttendanceStatisticsSer
     @Override
     public List<AttendanceStatistics> selectAttendanceStatisticsByVenueIdAndMonth(Integer venueId, String yearMonth) {
         return attendanceStatisticsMapper.selectAttendanceStatisticsByVenueIdAndMonth(venueId, yearMonth);
+    }
+
+    /**
+     * 查询考勤统计 VO 列表（支持条件过滤）
+     * 
+     * @param attendanceStatistics 查询条件对象
+     * @return 考勤统计 VO 列表
+     */
+    @Override
+    public List<AttendanceStatisticsVo> selectAttendanceStatisticsVoList(AttendanceStatistics attendanceStatistics) {
+        return attendanceStatisticsMapper.selectAttendanceStatisticsVoList(attendanceStatistics);
+    }
+
+    /**
+     * 根据学生 ID 和年月查询考勤统计 VO
+     * 
+     * @param studentId 学号
+     * @param yearMonth 年月（格式：yyyy-MM，如 2026-03）
+     * @return 考勤统计 VO 对象
+     */
+    @Override
+    public AttendanceStatisticsVo selectAttendanceStatisticsVoByStudentIdAndMonth(String studentId, String yearMonth) {
+        return attendanceStatisticsMapper.selectAttendanceStatisticsVoByStudentIdAndMonth(studentId, yearMonth);
+    }
+
+    /**
+     * 根据场馆 ID 和年月查询考勤统计 VO 列表
+     * 
+     * @param venueId 场馆 ID
+     * @param yearMonth 年月（格式：yyyy-MM，如 2026-03）
+     * @return 考勤统计 VO 列表
+     */
+    @Override
+    public List<AttendanceStatisticsVo> selectAttendanceStatisticsVoByVenueIdAndMonth(Integer venueId, String yearMonth) {
+        return attendanceStatisticsMapper.selectAttendanceStatisticsVoByVenueIdAndMonth(venueId, yearMonth);
     }
 }

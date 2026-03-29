@@ -1,6 +1,7 @@
 package com.zcst.manage.mapper;
 
 import com.zcst.manage.domain.AttendanceRecord;
+import com.zcst.manage.domain.Vo.AttendanceRecordVo;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -98,4 +99,23 @@ public interface AttendanceRecordMapper {
      * @return 该学生该月的考勤记录列表
      */
     public List<AttendanceRecord> selectAttendanceRecordByStudentIdAndMonth(@Param("studentId") String studentId, @Param("yearMonth") String yearMonth);
+
+    /**
+     * 根据学生 ID 和月份查询考勤记录 VO
+     * 用于月度考勤统计，返回包含关联信息的 VO 对象
+     * 
+     * @param studentId 学生 ID
+     * @param yearMonth 年月（格式：yyyy-MM，如 2026-03）
+     * @return 该学生该月的考勤记录 VO 列表
+     */
+    public List<AttendanceRecordVo> selectAttendanceRecordVoByStudentIdAndMonth(@Param("studentId") String studentId, @Param("yearMonth") String yearMonth);
+
+    /**
+     * 查询考勤记录 VO 列表（支持条件过滤）
+     * 支持按学生 ID、值班 ID、年月、状态等条件过滤，返回包含关联信息的 VO 对象
+     * 
+     * @param attendanceRecord 查询条件对象
+     * @return 考勤记录 VO 列表
+     */
+    public List<AttendanceRecordVo> selectAttendanceRecordVoList(AttendanceRecord attendanceRecord);
 }

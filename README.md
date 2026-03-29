@@ -8,17 +8,19 @@ zcst-b 是一个基于 Spring Boot 的学生管理系统后端项目，提供了
 
 ### 后端技术栈
 
-| 技术/框架 | 版本 | 用途 |
-| :--- | :--- | :--- |
-| Spring Boot | 4.0.3 | 后端核心框架 |
-| Spring Security | 内置 | 安全框架 |
-| MyBatis | 4.0.1 | ORM 框架 |
-| Druid | 1.2.28 | 数据库连接池 |
-| JWT | 0.9.1 | 认证令牌 |
-| MySQL | - | 数据库 |
-| Redis | - | 缓存 |
-| SpringDoc | 3.0.2 | API 文档 |
-| Lombok | 1.18.34 | 代码简化工具 |
+| 技术/框架             | 版本    | 用途           |
+| :-------------------- | :------ | :------------- |
+| Spring Boot           | 4.0.3   | 后端核心框架   |
+| Spring Security       | 内置    | 安全框架       |
+| MyBatis               | 4.0.1   | ORM 框架       |
+| Druid                 | 1.2.28  | 数据库连接池   |
+| JWT                   | 0.9.1   | 认证令牌       |
+| MySQL                 | -       | 数据库         |
+| Redis                 | -       | 缓存           |
+| SpringDoc             | 3.0.2   | API 文档       |
+| Lombok                | 1.18.34 | 代码简化工具   |
+| x-file-storage-spring | 2.3.0   | 文件存储框架   |
+| aliyun-sdk-oss        | 3.16.1  | 阿里云 OSS SDK |
 
 ### 项目结构
 
@@ -38,6 +40,8 @@ zcst-b/
 │   └── src/main/java/com/zcst/quartz/  # 定时任务管理
 ├── zcst-system/           # 系统管理模块
 │   └── src/main/java/com/zcst/system/  # 系统功能实现
+├── zcst-upload/           # 文件上传模块（新增）
+│   └── src/main/java/com/zcst/upload/  # 文件上传功能实现
 ├── sql/                   # 数据库脚本
 └── pom.xml                # Maven 配置文件
 ```
@@ -73,17 +77,26 @@ zcst-b/
 - **值班时间配置**：场馆值班时间的配置和管理
 - **考勤管理**：学生考勤记录的管理和统计，支持按月统计值班时长、打卡次数、出勤次数等，支持按用户角色过滤数据
 
-### 4. 权限控制说明
+### 4. 文件上传管理
 
-#### 4.1 场馆管理员权限隔离
+- **课表照片上传**：支持学生上传课表照片到阿里云 OSS，自动按日期分类存储
+- **文件命名规则**：采用日期 + 序号的命名方式，确保文件名唯一且有规律
+- **序号持久化**：通过查询 OSS 当天已有文件数量，自动递增序号
+- **双模式支持**：支持登录模式（自动获取学号）和测试模式（手动输入学号）
+
+### 5. 权限控制说明
+
+#### 5.1 场馆管理员权限隔离
 
 系统采用基于 `sys_role.venue_id` 字段的权限控制方式，实现场馆管理员的数据隔离。
 
 **权限控制逻辑**：
+
 - **超级管理员（admin）**：可以访问所有场馆的数据
 - **场馆管理员**：只能访问自己管理的场馆数据
 
 **权限控制方式**：
+
 ```java
 // 从用户角色中获取场馆 ID
 private Integer getVenueIdFromUserRoles() {
@@ -91,7 +104,7 @@ private Integer getVenueIdFromUserRoles() {
     if (loginUser == null || loginUser.getUser() == null || loginUser.getUser().getRoles() == null) {
         return null;
     }
-    
+
     return loginUser.getUser().getRoles().stream()
         .filter(role -> role.getVenueId() != null)
         .findFirst()
@@ -110,26 +123,27 @@ private boolean isSuperAdmin() {
 ```
 
 **应用场景**：
+
 1. **查询列表**：非超级管理员自动添加 venue_id 过滤条件
 2. **新增数据**：非超级管理员自动设置 venue_id 为当前用户管理的场馆
 3. **修改数据**：非超级管理员只能修改自己场馆的数据
 4. **删除数据**：非超级管理员只能删除自己场馆的数据，并添加严格验证
 5. **查看详情**：非超级管理员只能查看自己场馆的详细信息
 
-#### 4.2 权限控制优势
+#### 5.2 权限控制优势
 
-| 对比项 | 旧方式（角色名称匹配） | 新方式（venue_id 字段） |
-|--------|---------------------|---------------------|
-| 性能 | 需要查询场馆表（~45ms） | 直接从内存获取（~0ms） |
-| 代码复杂度 | 15 行代码，多层循环 | 6 行代码，Stream API |
-| 安全性 | 依赖角色名称约定，存在安全隐患 | 基于数据库字段，更加可靠 |
-| 维护性 | 新增场馆需要配置角色名称 | 无需额外配置 |
+| 对比项     | 旧方式（角色名称匹配）         | 新方式（venue_id 字段）  |
+| ---------- | ------------------------------ | ------------------------ |
+| 性能       | 需要查询场馆表（~45ms）        | 直接从内存获取（~0ms）   |
+| 代码复杂度 | 15 行代码，多层循环            | 6 行代码，Stream API     |
+| 安全性     | 依赖角色名称约定，存在安全隐患 | 基于数据库字段，更加可靠 |
+| 维护性     | 新增场馆需要配置角色名称       | 无需额外配置             |
 
-### 5. 工具管理
+### 6. 工具管理
 
 - **代码生成**：前后端代码的自动生成
 
-### 6. 注册功能
+### 7. 注册功能
 
 - **学生注册**：学生用户的注册流程
 - **管理员注册**：管理员用户的注册流程
@@ -158,14 +172,14 @@ private boolean isSuperAdmin() {
 
 ### 状态码说明
 
-| 状态码 | 说明 |
-| :--- | :--- |
-| 200 | 操作成功 |
-| 400 | 请求参数错误 |
-| 401 | 未授权 |
-| 403 | 权限不足 |
-| 404 | 资源不存在 |
-| 500 | 服务器内部错误 |
+| 状态码 | 说明           |
+| :----- | :------------- |
+| 200    | 操作成功       |
+| 400    | 请求参数错误   |
+| 401    | 未授权         |
+| 403    | 权限不足       |
+| 404    | 资源不存在     |
+| 500    | 服务器内部错误 |
 
 ## 核心业务流程
 
@@ -225,183 +239,327 @@ private boolean isSuperAdmin() {
 
 #### 用户表 (`sys_user`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `user_id` | `BIGINT` | 用户 ID |
-| `dept_id` | `BIGINT` | 部门 ID |
-| `username` | `VARCHAR(30)` | 用户名 |
-| `nickname` | `VARCHAR(30)` | 昵称 |
-| `password` | `VARCHAR(100)` | 密码 |
-| `status` | `CHAR(1)` | 状态 |
-| `create_time` | `DATETIME` | 创建时间 |
+| 字段名        | 数据类型       | 描述     |
+| :------------ | :------------- | :------- |
+| `user_id`     | `BIGINT`       | 用户 ID  |
+| `dept_id`     | `BIGINT`       | 部门 ID  |
+| `username`    | `VARCHAR(30)`  | 用户名   |
+| `nickname`    | `VARCHAR(30)`  | 昵称     |
+| `password`    | `VARCHAR(100)` | 密码     |
+| `status`      | `CHAR(1)`      | 状态     |
+| `create_time` | `DATETIME`     | 创建时间 |
 
 #### 角色表 (`sys_role`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `role_id` | `BIGINT` | 角色 ID |
-| `role_name` | `VARCHAR(30)` | 角色名称 |
-| `role_key` | `VARCHAR(100)` | 角色权限字符串 |
-| `venue_id` | `INT` | 关联场馆 ID（场馆管理员专用） |
-| `status` | `CHAR(1)` | 状态 |
-| `create_time` | `DATETIME` | 创建时间 |
+| 字段名        | 数据类型       | 描述                          |
+| :------------ | :------------- | :---------------------------- |
+| `role_id`     | `BIGINT`       | 角色 ID                       |
+| `role_name`   | `VARCHAR(30)`  | 角色名称                      |
+| `role_key`    | `VARCHAR(100)` | 角色权限字符串                |
+| `venue_id`    | `INT`          | 关联场馆 ID（场馆管理员专用） |
+| `status`      | `CHAR(1)`      | 状态                          |
+| `create_time` | `DATETIME`     | 创建时间                      |
 
 #### 学生表 (`student`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `id` | `BIGINT` | 学生ID |
-| `name` | `VARCHAR(50)` | 姓名 |
-| `gender` | `CHAR(1)` | 性别 |
-| `age` | `INT` | 年龄 |
-| `school` | `VARCHAR(100)` | 学校 |
-| `create_time` | `DATETIME` | 创建时间 |
+| 字段名        | 数据类型       | 描述     |
+| :------------ | :------------- | :------- |
+| `id`          | `BIGINT`       | 学生ID   |
+| `name`        | `VARCHAR(50)`  | 姓名     |
+| `gender`      | `CHAR(1)`      | 性别     |
+| `age`         | `INT`          | 年龄     |
+| `school`      | `VARCHAR(100)` | 学校     |
+| `create_time` | `DATETIME`     | 创建时间 |
 
 #### 场地表 (`venue`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `venue_id` | `BIGINT` | 场地ID |
+| 字段名       | 数据类型       | 描述     |
+| :----------- | :------------- | :------- |
+| `venue_id`   | `BIGINT`       | 场地ID   |
 | `venue_name` | `VARCHAR(100)` | 场地名称 |
-| `created_at` | `DATETIME` | 创建时间 |
-| `updated_at` | `DATETIME` | 更新时间 |
+| `created_at` | `DATETIME`     | 创建时间 |
+| `updated_at` | `DATETIME`     | 更新时间 |
 
 #### 值班表 (`duty_schedule`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `duty_id` | `INT` | 值班表ID |
-| `student_id` | `VARCHAR(20)` | 学号 |
-| `venue_id` | `INT` | 场馆ID |
-| `start_time` | `DATETIME` | 值班开始时间 |
-| `end_time` | `DATETIME` | 值班结束时间 |
-| `remark` | `VARCHAR(255)` | 备注 |
-| `attendance_status` | `CHAR(1)` | 考勤状态（0正常 1迟到 2早退 3缺勤） |
-| `created_at` | `DATETIME` | 创建时间 |
-| `updated_at` | `DATETIME` | 更新时间 |
+| 字段名              | 数据类型       | 描述                                |
+| :------------------ | :------------- | :---------------------------------- |
+| `duty_id`           | `INT`          | 值班表ID                            |
+| `student_id`        | `VARCHAR(20)`  | 学号                                |
+| `venue_id`          | `INT`          | 场馆ID                              |
+| `start_time`        | `DATETIME`     | 值班开始时间                        |
+| `end_time`          | `DATETIME`     | 值班结束时间                        |
+| `remark`            | `VARCHAR(255)` | 备注                                |
+| `attendance_status` | `CHAR(1)`      | 考勤状态（0正常 1迟到 2早退 3缺勤） |
+| `created_at`        | `DATETIME`     | 创建时间                            |
+| `updated_at`        | `DATETIME`     | 更新时间                            |
 
 #### 值班时间配置表 (`duty_time_config`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `config_id` | `INT` | 配置ID |
-| `venue_id` | `INT` | 场馆ID |
-| `start_time` | `TIME` | 开始时间 |
-| `end_time` | `TIME` | 结束时间 |
-| `is_enable` | `TINYINT` | 是否启用 |
+| 字段名       | 数据类型   | 描述     |
+| :----------- | :--------- | :------- |
+| `config_id`  | `INT`      | 配置ID   |
+| `venue_id`   | `INT`      | 场馆ID   |
+| `start_time` | `TIME`     | 开始时间 |
+| `end_time`   | `TIME`     | 结束时间 |
+| `is_enable`  | `TINYINT`  | 是否启用 |
 | `created_at` | `DATETIME` | 创建时间 |
 | `updated_at` | `DATETIME` | 更新时间 |
 
 #### 考勤记录表 (`attendance_record`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `record_id` | `BIGINT` | 记录ID |
-| `student_id` | `VARCHAR(20)` | 学号 |
-| `duty_id` | `INT` | 值班表ID |
-| `check_in_time` | `DATETIME` | 打卡时间 |
-| `status` | `CHAR(1)` | 状态（0正常 1迟到 2早退 3缺勤） |
-| `remark` | `VARCHAR(255)` | 备注 |
-| `created_at` | `DATETIME` | 创建时间 |
-| `updated_at` | `DATETIME` | 更新时间 |
+| 字段名          | 数据类型       | 描述                            |
+| :-------------- | :------------- | :------------------------------ |
+| `record_id`     | `BIGINT`       | 记录ID                          |
+| `student_id`    | `VARCHAR(20)`  | 学号                            |
+| `duty_id`       | `INT`          | 值班表ID                        |
+| `check_in_time` | `DATETIME`     | 打卡时间                        |
+| `status`        | `CHAR(1)`      | 状态（0正常 1迟到 2早退 3缺勤） |
+| `remark`        | `VARCHAR(255)` | 备注                            |
+| `created_at`    | `DATETIME`     | 创建时间                        |
+| `updated_at`    | `DATETIME`     | 更新时间                        |
 
 #### 考勤统计表 (`attendance_statistics`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `stat_id` | `BIGINT` | 统计 ID |
-| `student_id` | `VARCHAR(20)` | 学号 |
-| `venue_id` | `INT` | 场馆 ID |
-| `year_month` | `VARCHAR(7)` | 年月（格式：2026-04） |
-| `total_duty_hours` | `DECIMAL(10,2)` | 值班总时长 |
-| `check_in_count` | `INT` | 打卡次数 |
-| `attendance_count` | `INT` | 出勤次数 |
-| `absence_count` | `INT` | 缺勤次数 |
-| `late_count` | `INT` | 迟到次数 |
-| `early_leave_count` | `INT` | 早退次数 |
-| `leave_count` | `INT` | 请假次数 |
-| `exchange_count` | `INT` | 调班次数 |
-| `created_at` | `DATETIME` | 创建时间 |
-| `updated_at` | `DATETIME` | 更新时间 |
+| 字段名              | 数据类型        | 描述                  |
+| :------------------ | :-------------- | :-------------------- |
+| `stat_id`           | `BIGINT`        | 统计 ID               |
+| `student_id`        | `VARCHAR(20)`   | 学号                  |
+| `venue_id`          | `INT`           | 场馆 ID               |
+| `year_month`        | `VARCHAR(7)`    | 年月（格式：2026-04） |
+| `total_duty_hours`  | `DECIMAL(10,2)` | 值班总时长            |
+| `check_in_count`    | `INT`           | 打卡次数              |
+| `attendance_count`  | `INT`           | 出勤次数              |
+| `absence_count`     | `INT`           | 缺勤次数              |
+| `late_count`        | `INT`           | 迟到次数              |
+| `early_leave_count` | `INT`           | 早退次数              |
+| `leave_count`       | `INT`           | 请假次数              |
+| `exchange_count`    | `INT`           | 调班次数              |
+| `created_at`        | `DATETIME`      | 创建时间              |
+| `updated_at`        | `DATETIME`      | 更新时间              |
 
 #### 考勤规则配置表 (`attendance_rule`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `rule_id` | `INT` | 规则 ID（主键） |
-| `venue_id` | `INT` | 场馆 ID |
-| `venue_name` | `VARCHAR(100)` | 场馆名称 |
-| `late_threshold_minutes` | `INT` | 迟到阈值（分钟） |
-| `early_leave_threshold_minutes` | `INT` | 早退阈值（分钟） |
-| `min_checkin_before_minutes` | `INT` | 最早提前打卡时间（分钟） |
-| `max_checkin_after_minutes` | `INT` | 最晚延后打卡时间（分钟） |
-| `status` | `CHAR(1)` | 状态（0 正常 1 停用） |
-| `remark` | `VARCHAR(500)` | 备注 |
-| `created_at` | `DATETIME` | 创建时间 |
-| `updated_at` | `DATETIME` | 更新时间 |
+| 字段名                          | 数据类型       | 描述                     |
+| :------------------------------ | :------------- | :----------------------- |
+| `rule_id`                       | `INT`          | 规则 ID（主键）          |
+| `venue_id`                      | `INT`          | 场馆 ID                  |
+| `venue_name`                    | `VARCHAR(100)` | 场馆名称                 |
+| `late_threshold_minutes`        | `INT`          | 迟到阈值（分钟）         |
+| `early_leave_threshold_minutes` | `INT`          | 早退阈值（分钟）         |
+| `min_checkin_before_minutes`    | `INT`          | 最早提前打卡时间（分钟） |
+| `max_checkin_after_minutes`     | `INT`          | 最晚延后打卡时间（分钟） |
+| `status`                        | `CHAR(1)`      | 状态（0 正常 1 停用）    |
+| `remark`                        | `VARCHAR(500)` | 备注                     |
+| `created_at`                    | `DATETIME`     | 创建时间                 |
+| `updated_at`                    | `DATETIME`     | 更新时间                 |
 
 #### 请假申请表 (`leave_application`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `leave_id` | `INT` | 请假 ID（主键） |
-| `student_id` | `VARCHAR(20)` | 学号 |
-| `student_name` | `VARCHAR(50)` | 学生姓名 |
-| `venue_id` | `INT` | 场馆 ID |
-| `duty_id` | `INT` | 值班 ID（可选） |
-| `leave_type` | `CHAR(1)` | 请假类型（0 病假 1 事假 2 其他） |
-| `start_time` | `DATETIME` | 请假开始时间 |
-| `end_time` | `DATETIME` | 请假结束时间 |
-| `reason` | `VARCHAR(500)` | 请假原因 |
-| `proof_image` | `VARCHAR(500)` | 证明材料图片 URL |
-| `status` | `CHAR(1)` | 审批状态（0 待审批 1 已通过 2 已拒绝） |
-| `approver_id` | `VARCHAR(20)` | 审批人 ID |
-| `approve_time` | `DATETIME` | 审批时间 |
-| `approve_remark` | `VARCHAR(500)` | 审批意见 |
-| `created_at` | `DATETIME` | 申请时间 |
-| `updated_at` | `DATETIME` | 更新时间 |
+| 字段名           | 数据类型       | 描述                                   |
+| :--------------- | :------------- | :------------------------------------- |
+| `leave_id`       | `INT`          | 请假 ID（主键）                        |
+| `student_id`     | `VARCHAR(20)`  | 学号                                   |
+| `student_name`   | `VARCHAR(50)`  | 学生姓名                               |
+| `venue_id`       | `INT`          | 场馆 ID                                |
+| `duty_id`        | `INT`          | 值班 ID（可选）                        |
+| `leave_type`     | `CHAR(1)`      | 请假类型（0 病假 1 事假 2 其他）       |
+| `start_time`     | `DATETIME`     | 请假开始时间                           |
+| `end_time`       | `DATETIME`     | 请假结束时间                           |
+| `reason`         | `VARCHAR(500)` | 请假原因                               |
+| `proof_image`    | `VARCHAR(500)` | 证明材料图片 URL                       |
+| `status`         | `CHAR(1)`      | 审批状态（0 待审批 1 已通过 2 已拒绝） |
+| `approver_id`    | `VARCHAR(20)`  | 审批人 ID                              |
+| `approve_time`   | `DATETIME`     | 审批时间                               |
+| `approve_remark` | `VARCHAR(500)` | 审批意见                               |
+| `created_at`     | `DATETIME`     | 申请时间                               |
+| `updated_at`     | `DATETIME`     | 更新时间                               |
 
 #### 调班申请表 (`shift_exchange`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `exchange_id` | `INT` | 调班 ID（主键） |
-| `student_id_a` | `VARCHAR(20)` | 申请人学号 |
-| `student_name_a` | `VARCHAR(50)` | 申请人姓名 |
-| `student_id_b` | `VARCHAR(20)` | 替换人学号 |
-| `student_name_b` | `VARCHAR(50)` | 替换人姓名 |
-| `venue_id` | `INT` | 场馆 ID |
-| `duty_id` | `INT` | 原值班 ID |
-| `exchange_reason` | `VARCHAR(500)` | 调班原因 |
-| `status` | `CHAR(1)` | 审批状态（0 待审批 1 已通过 2 已拒绝 3 已确认） |
-| `approver_id` | `VARCHAR(20)` | 审批人 ID |
-| `approve_time` | `DATETIME` | 审批时间 |
-| `approve_remark` | `VARCHAR(500)` | 审批意见 |
-| `student_b_confirm` | `CHAR(1)` | 替换人确认（0 未确认 1 已确认） |
-| `student_b_confirm_time` | `DATETIME` | 替换人确认时间 |
-| `created_at` | `DATETIME` | 申请时间 |
-| `updated_at` | `DATETIME` | 更新时间 |
+| 字段名                   | 数据类型       | 描述                                            |
+| :----------------------- | :------------- | :---------------------------------------------- |
+| `exchange_id`            | `INT`          | 调班 ID（主键）                                 |
+| `student_id_a`           | `VARCHAR(20)`  | 申请人学号                                      |
+| `student_name_a`         | `VARCHAR(50)`  | 申请人姓名                                      |
+| `student_id_b`           | `VARCHAR(20)`  | 替换人学号                                      |
+| `student_name_b`         | `VARCHAR(50)`  | 替换人姓名                                      |
+| `venue_id`               | `INT`          | 场馆 ID                                         |
+| `duty_id`                | `INT`          | 原值班 ID                                       |
+| `exchange_reason`        | `VARCHAR(500)` | 调班原因                                        |
+| `status`                 | `CHAR(1)`      | 审批状态（0 待审批 1 已通过 2 已拒绝 3 已确认） |
+| `approver_id`            | `VARCHAR(20)`  | 审批人 ID                                       |
+| `approve_time`           | `DATETIME`     | 审批时间                                        |
+| `approve_remark`         | `VARCHAR(500)` | 审批意见                                        |
+| `student_b_confirm`      | `CHAR(1)`      | 替换人确认（0 未确认 1 已确认）                 |
+| `student_b_confirm_time` | `DATETIME`     | 替换人确认时间                                  |
+| `created_at`             | `DATETIME`     | 申请时间                                        |
+| `updated_at`             | `DATETIME`     | 更新时间                                        |
 
 #### 补卡申请表 (`makeup_application`)
 
-| 字段名 | 数据类型 | 描述 |
-| :--- | :--- | :--- |
-| `makeup_id` | `INT` | 补卡 ID（主键） |
-| `student_id` | `VARCHAR(20)` | 学号 |
-| `student_name` | `VARCHAR(50)` | 学生姓名 |
-| `venue_id` | `INT` | 场馆 ID |
-| `duty_id` | `INT` | 值班 ID |
-| `miss_type` | `CHAR(1)` | 缺卡类型（0 上班未打卡 1 下班未打卡 2 都未打卡） |
-| `actual_start_time` | `DATETIME` | 实际上班时间 |
-| `actual_end_time` | `DATETIME` | 实际下班时间 |
-| `reason` | `VARCHAR(500)` | 补卡原因 |
-| `proof_image` | `VARCHAR(500)` | 证明材料图片 URL |
-| `status` | `CHAR(1)` | 审批状态（0 待审批 1 已通过 2 已拒绝） |
-| `approver_id` | `VARCHAR(20)` | 审批人 ID |
-| `approve_time` | `DATETIME` | 审批时间 |
-| `approve_remark` | `VARCHAR(500)` | 审批意见 |
-| `created_at` | `DATETIME` | 申请时间 |
-| `updated_at` | `DATETIME` | 更新时间 |
+| 字段名              | 数据类型       | 描述                                             |
+| :------------------ | :------------- | :----------------------------------------------- |
+| `makeup_id`         | `INT`          | 补卡 ID（主键）                                  |
+| `student_id`        | `VARCHAR(20)`  | 学号                                             |
+| `student_name`      | `VARCHAR(50)`  | 学生姓名                                         |
+| `venue_id`          | `INT`          | 场馆 ID                                          |
+| `duty_id`           | `INT`          | 值班 ID                                          |
+| `miss_type`         | `CHAR(1)`      | 缺卡类型（0 上班未打卡 1 下班未打卡 2 都未打卡） |
+| `actual_start_time` | `DATETIME`     | 实际上班时间                                     |
+| `actual_end_time`   | `DATETIME`     | 实际下班时间                                     |
+| `reason`            | `VARCHAR(500)` | 补卡原因                                         |
+| `proof_image`       | `VARCHAR(500)` | 证明材料图片 URL                                 |
+| `status`            | `CHAR(1)`      | 审批状态（0 待审批 1 已通过 2 已拒绝）           |
+| `approver_id`       | `VARCHAR(20)`  | 审批人 ID                                        |
+| `approve_time`      | `DATETIME`     | 审批时间                                         |
+| `approve_remark`    | `VARCHAR(500)` | 审批意见                                         |
+| `created_at`        | `DATETIME`     | 申请时间                                         |
+| `updated_at`        | `DATETIME`     | 更新时间                                         |
+
+## 文件上传 API 接口说明
+
+### 1. 课表照片上传接口
+
+#### 接口地址
+
+```
+POST /upload/schedule
+```
+
+#### 请求参数
+
+| 参数名    | 类型          | 必填 | 说明                                       |
+| --------- | ------------- | ---- | ------------------------------------------ |
+| file      | MultipartFile | 是   | 上传的图片文件                             |
+| studentId | String        | 否   | 学号（已登录时自动获取，未登录时需要传递） |
+
+#### 请求示例
+
+```bash
+curl -X POST http://localhost:8080/upload/schedule \
+  -F "file=@timetable.jpg" \
+  -F "studentId=20260321"
+```
+
+#### 响应格式
+
+```json
+{
+  "code": 200,
+  "msg": "操作成功",
+  "data": "https://zcsst-student-timetable.oss-cn-beijing.aliyuncs.com/timetable/schedule/2026/03/29/202603290001.jpg"
+}
+```
+
+### 2. 文件命名规则
+
+#### 2.1 文件路径结构
+
+```
+timetable/                              # 根目录（base-path）
+  schedule/                             # 课表目录
+    {年}/{月}/{日}/                     # 日期目录
+      {yyyyMMdd}{序号}.{扩展名}         # 文件名
+```
+
+#### 2.2 完整路径示例
+
+```
+https://zcsst-student-timetable.oss-cn-beijing.aliyuncs.com/timetable/schedule/2026/03/29/202603290001.jpg
+
+路径解析：
+timetable/                    # base-path（application.yml 配置）
+  schedule/                   # 课表目录
+    2026/03/29/              # 日期（年/月/日）
+      202603290001.jpg       # 文件名（日期 +4 位序号）
+```
+
+#### 2.3 文件命名规则详解
+
+| 部分   | 格式         | 示例     | 说明                       |
+| ------ | ------------ | -------- | -------------------------- |
+| 日期   | yyyyMMdd     | 20260329 | 上传日期的 8 位数字        |
+| 序号   | 0001-9999    | 0001     | 4 位数字序号，从 0001 开始 |
+| 扩展名 | 原文件扩展名 | jpg      | 保持原始文件扩展名         |
+
+#### 2.4 序号生成规则
+
+1. **查询 OSS 当天文件**：上传时查询 OSS 上当天（{年}/{月}/{日}）已有的文件数量
+2. **提取已用序号**：从文件名中提取已使用的序号
+3. **分配下一个序号**：从 1 开始递增，找到第一个未使用的序号
+4. **持久化机制**：通过查询 OSS 实现序号持久化，重启后不会重置
+
+#### 2.5 示例文件列表
+
+```
+# 2026 年 3 月 29 日上传的文件
+timetable/schedule/2026/03/29/202603290001.jpg
+timetable/schedule/2026/03/29/202603290002.jpg
+timetable/schedule/2026/03/29/202603290003.jpg
+
+# 2026 年 3 月 30 日上传的文件（序号重置）
+timetable/schedule/2026/03/30/202603300001.jpg
+timetable/schedule/2026/03/30/202603300002.jpg
+```
+
+### 3. 配置说明
+
+#### 3.1 application.yml 配置
+
+```yaml
+dromara:
+  x-file-storage:
+    default-platform: aliyun-oss-1
+    thumbnail-suffix: ".min.jpg"
+    aliyun-oss:
+      - platform: aliyun-oss-1
+        enable-storage: true
+        access-key: <你的 AccessKey>
+        secret-key: <你的 SecretKey>
+        end-point: oss-cn-beijing.aliyuncs.com
+        bucket-name: zcsst-student-timetable
+        domain: https://zcsst-student-timetable.oss-cn-beijing.aliyuncs.com/
+        base-path: timetable/
+```
+
+#### 3.2 启动类配置
+
+在启动类上添加 `@EnableFileStorage` 注解：
+
+```java
+@EnableFileStorage
+@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+public class RuoYiApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(RuoYiApplication.class, args);
+    }
+}
+```
+
+### 4. 使用模式
+
+#### 4.1 登录模式（正式环境）
+
+- 用户已登录系统
+- 自动从登录信息中获取学号
+- 学号仅用于日志记录，不包含在文件路径中
+
+#### 4.2 测试模式（未登录）
+
+- 用户未登录系统
+- 需要手动传递 `studentId` 参数
+- 学号仅用于日志记录，不包含在文件路径中
+
+### 5. 技术栈
+
+| 技术/框架             | 版本   | 用途           |
+| --------------------- | ------ | -------------- |
+| x-file-storage-spring | 2.3.0  | 文件存储框架   |
+| aliyun-sdk-oss        | 3.16.1 | 阿里云 OSS SDK |
+| Spring Boot           | 4.0.3  | Web 框架       |
+
+---
 
 ## 开发指南
 
@@ -449,6 +607,7 @@ mvn spring-boot:run -pl zcst-admin
 #### 1. 考勤记录接口
 
 ##### 1.1 打卡
+
 - **接口**: `POST /manage/attendance/record/checkIn`
 - **参数**:
   - studentId: String - 学号
@@ -456,6 +615,7 @@ mvn spring-boot:run -pl zcst-admin
 - **返回**: 打卡结果
 
 ##### 1.2 签退
+
 - **接口**: `POST /manage/attendance/record/checkOut`
 - **参数**:
   - recordId: Long - 考勤记录 ID
@@ -463,8 +623,9 @@ mvn spring-boot:run -pl zcst-admin
 - **返回**: 签退结果
 
 ##### 1.3 查询考勤记录列表
+
 - **接口**: `GET /manage/attendance/record/list`
-- **参数**: 
+- **参数**:
   - studentId: String - 学号（可选）
   - dutyId: Integer - 值班 ID（可选）
   - status: String - 状态（可选）
@@ -473,10 +634,12 @@ mvn spring-boot:run -pl zcst-admin
 - **返回**: 考勤记录列表
 
 ##### 1.4 获取考勤记录详情
+
 - **接口**: `GET /manage/attendance/record/info/{recordId}`
 - **返回**: 考勤记录详情
 
 ##### 1.5 查询学生月度考勤
+
 - **接口**: `GET /manage/attendance/record/student/month`
 - **参数**:
   - studentId: String - 学号
@@ -486,12 +649,14 @@ mvn spring-boot:run -pl zcst-admin
 #### 2. 考勤统计接口
 
 ##### 2.1 月度考勤统计
+
 - **接口**: `POST /manage/attendance/statistics/calculate`
 - **参数**:
   - yearMonth: String - 年月（格式：2026-04）
 - **返回**: 统计结果
 
 ##### 2.2 查询学生月度统计
+
 - **接口**: `GET /manage/attendance/statistics/student/month`
 - **参数**:
   - studentId: String - 学号
@@ -499,6 +664,7 @@ mvn spring-boot:run -pl zcst-admin
 - **返回**: 学生月度统计数据
 
 ##### 2.3 查询场馆月度统计
+
 - **接口**: `GET /manage/attendance/statistics/venue/month`
 - **参数**:
   - venueId: Integer - 场馆 ID
@@ -508,10 +674,12 @@ mvn spring-boot:run -pl zcst-admin
 #### 3. 考勤规则接口
 
 ##### 3.1 查询考勤规则
+
 - **接口**: `GET /manage/attendance/rule/{venueId}`
 - **返回**: 场馆考勤规则
 
 ##### 3.2 更新考勤规则
+
 - **接口**: `PUT /manage/attendance/rule`
 - **参数**: AttendanceRule 对象
 - **返回**: 更新结果
@@ -540,23 +708,27 @@ mvn spring-boot:run -pl zcst-admin
 ### 四、状态码说明
 
 #### 1. 考勤状态
+
 - `0` - 正常
 - `1` - 迟到
 - `2` - 早退
 - `3` - 缺勤
 
 #### 2. 审批状态
+
 - `0` - 待审批
 - `1` - 已通过
 - `2` - 已拒绝
 - `3` - 已确认（调班专用）
 
 #### 3. 请假类型
+
 - `0` - 病假
 - `1` - 事假
 - `2` - 其他
 
 #### 4. 缺卡类型
+
 - `0` - 上班未打卡
 - `1` - 下班未打卡
 - `2` - 都未打卡
@@ -564,6 +736,7 @@ mvn spring-boot:run -pl zcst-admin
 ### 五、使用说明
 
 #### 1. 打卡流程
+
 ```
 学生值班 → 到达场馆 → 打卡（checkIn）
          → 开始值班
@@ -572,6 +745,7 @@ mvn spring-boot:run -pl zcst-admin
 ```
 
 #### 2. 统计流程
+
 ```
 月末 → 调用统计接口
     → 按学生分组计算
@@ -629,14 +803,14 @@ java -jar zcst-admin/target/zcst-admin.jar
 
 ### 环境变量
 
-| 环境变量 | 描述 | 默认值 |
-| :--- | :--- | :--- |
-| `SERVER_PORT` | 服务端口 | 8080 |
-| `DATABASE_URL` | 数据库连接地址 | jdbc:mysql://localhost:3306/zcst |
-| `DATABASE_USERNAME` | 数据库用户名 | root |
-| `DATABASE_PASSWORD` | 数据库密码 | 123456 |
-| `REDIS_HOST` | Redis 主机 | localhost |
-| `REDIS_PORT` | Redis 端口 | 6379 |
+| 环境变量            | 描述           | 默认值                           |
+| :------------------ | :------------- | :------------------------------- |
+| `SERVER_PORT`       | 服务端口       | 8080                             |
+| `DATABASE_URL`      | 数据库连接地址 | jdbc:mysql://localhost:3306/zcst |
+| `DATABASE_USERNAME` | 数据库用户名   | root                             |
+| `DATABASE_PASSWORD` | 数据库密码     | 123456                           |
+| `REDIS_HOST`        | Redis 主机     | localhost                        |
+| `REDIS_PORT`        | Redis 端口     | 6379                             |
 
 ## 常见问题
 
@@ -749,9 +923,47 @@ java -jar zcst-admin/target/zcst-admin.jar
 
 ## 版本历史
 
+### v1.4.0 - 文件上传功能版本 (2026-03-29)
+
+#### 新增功能
+
+- ✅ 课表照片上传功能，支持上传到阿里云 OSS
+- ✅ 文件按日期分类存储（年/月/日）
+- ✅ 序号持久化机制，通过查询 OSS 当天文件数量实现
+- ✅ 支持双模式：登录模式（自动获取学号）和测试模式（手动输入）
+- ✅ 文件命名规则：日期 +4 位序号 + 扩展名
+
+#### 技术实现
+
+- ✅ 集成 x-file-storage-spring v2.3.0
+- ✅ 使用阿里云 OSS SDK v3.16.1
+- ✅ 添加 @EnableFileStorage 注解到启动类
+- ✅ Controller 支持 @Anonymous 匿名访问
+
+#### 文件命名示例
+
+```
+timetable/schedule/2026/03/29/202603290001.jpg
+timetable/schedule/2026/03/29/202603290002.jpg
+timetable/schedule/2026/03/30/202603300001.jpg  # 新的一天，序号重置
+```
+
+#### 涉及模块
+
+- ✅ zcst-upload - 文件上传模块（新增）
+- ✅ zcst-admin - 启动类配置
+- ✅ zcst-common - 通用工具支持
+
+#### 数据库更新
+
+- 无需数据库更新，文件存储在阿里云 OSS
+
+---
+
 ### v1.3.0 - 权限控制优化版本 (2026-03-27)
 
 #### 优化改进
+
 - ✅ 统一所有 Controller 的权限控制方式，全部采用 `sys_role.venue_id` 字段
 - ✅ 替换旧的角色名称匹配方式为直接使用 venue_id 字段
 - ✅ 优化 StudentController、VenueController、DutyScheduleController、DutyTimeConfigController 权限控制
@@ -759,6 +971,7 @@ java -jar zcst-admin/target/zcst-admin.jar
 - ✅ 完善日志记录，便于问题排查和审计
 
 #### 涉及模块
+
 - ✅ AttendanceRecordController（考勤记录）- 已使用新方式
 - ✅ AttendanceStatisticsController（考勤统计）- 已使用新方式
 - ✅ DutyScheduleController（值班安排）- 已优化
@@ -767,15 +980,18 @@ java -jar zcst-admin/target/zcst-admin.jar
 - ✅ VenueController（场馆管理）- 已优化
 
 #### 权限控制方式
+
 - **旧方式**: 通过角色名称匹配场馆名称（需要查询场馆表，性能较差）
 - **新方式**: 直接从 `sys_role.venue_id` 字段获取（无需查询，性能优秀）
 
 #### 性能提升
+
 - 权限检查性能提升约 90%（从 ~45ms 降低到 ~0ms）
 - 代码行数减少 60%，可读性显著提升
 - 消除了角色名称匹配的潜在安全问题
 
 #### 数据库更新
+
 - `sys_role` 表添加 `venue_id` 字段（INT）- 关联场馆 ID
 
 ---
@@ -783,17 +999,20 @@ java -jar zcst-admin/target/zcst-admin.jar
 ### v1.2.0 - 代码优化版本 (2026-03-27)
 
 #### 新增功能
+
 - ✅ 添加签退功能，支持自动计算值班时长
 - ✅ 完善考勤统计逻辑，添加月份过滤
 - ✅ 添加考勤规则配置功能
 
 #### 优化改进
+
 - ✅ 添加事务注解 (@Transactional) 到关键业务方法
 - ✅ 完善异常处理和日志记录
 - ✅ 清理未使用的代码
 - ✅ 新增重复签退检查逻辑
 
 #### Bug 修复
+
 - ✅ 修复 Mapper 接口方法重复定义问题
 - ✅ 修复 SQL 脚本缺少字段存在性判断
 - ✅ 修复签退逻辑时间获取和状态判断错误
@@ -801,6 +1020,7 @@ java -jar zcst-admin/target/zcst-admin.jar
 - ✅ 修复时长计算精度问题
 
 #### 数据库更新
+
 - 为 `attendance_record` 添加 `check_out_time` 和 `actual_duty_hours` 字段
 - 创建 `attendance_rule` 考勤规则配置表
 - 创建 `leave_application` 请假申请表
@@ -813,12 +1033,14 @@ java -jar zcst-admin/target/zcst-admin.jar
 ### v1.1.0 - 考勤功能增强版本 (2026-03-27)
 
 #### 新增功能
+
 - ✅ 考勤记录管理（打卡、查询）
 - ✅ 考勤统计管理（月度统计）
 - ✅ 值班表管理（自动排班）
 - ✅ 值班时间配置
 
 #### 数据库更新
+
 - 创建 `attendance_record` 考勤记录表
 - 创建 `attendance_statistics` 考勤统计表
 - 创建 `duty_schedule` 值班表
@@ -829,6 +1051,7 @@ java -jar zcst-admin/target/zcst-admin.jar
 ### v1.0.0 - 初始版本 (2026-03-21)
 
 #### 功能模块
+
 - ✅ 系统管理（用户、部门、岗位、菜单、角色等）
 - ✅ 监控管理（操作日志、登录日志、在线用户等）
 - ✅ 业务管理（学生管理、场地管理等）
@@ -844,7 +1067,7 @@ java -jar zcst-admin/target/zcst-admin.jar
 - **doc/考勤功能开发文档.md** - 考勤功能详细开发文档
 - **doc/考勤功能完善总结.md** - 考勤功能完善总结
 - **doc/Bug 修复报告.md** - Bug 修复详细报告
-- **doc/代码优化报告_v1.2.0.md** - 代码优化详细报告
+- **doc/代码优化报告\_v1.2.0.md** - 代码优化详细报告
 
 ---
 

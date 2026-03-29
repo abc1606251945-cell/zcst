@@ -1,6 +1,6 @@
 package com.zcst.web.controller.system;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.zcst.common.config.RuoYiConfig;
@@ -12,11 +12,11 @@ import com.zcst.common.utils.StringUtils;
  * @author ruoyi
  */
 @RestController
+@RequiredArgsConstructor
 public class SysIndexController
 {
     /** 系统基础配置 */
-    @Autowired
-    private RuoYiConfig ruoyiConfig;
+    private final RuoYiConfig ruoyiConfig;
 
     /**
      * 访问首页，提示语

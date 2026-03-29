@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>测试文件上传</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"],
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+        .info {
+            color: #2196F3;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📤 文件上传功能测试</h1>
+        
+        <div class="form-group">
+            <label for="fileInput">选择图片文件：</label>
+            <input type="file" id="fileInput" accept="image/*">
+            <img id="preview" class="preview" style="display: none;">
+        </div>
+        
+        <div class="form-group">
+            <label for="studentId">学生 ID（学号）：</label>
+            <input type="text" id="studentId" placeholder="请输入学号（如：20260321）" value="20260321">
+        </div>
+        
+        <div class="info-box" style="background: #fff3cd; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+            <p style="margin: 0; color: #856404;">
+                <strong>💡 提示：</strong><br>
+                - 测试环境：请手动输入学号<br>
+                - 正式环境：已登录系统，学号会自动获取，无需输入
+            </p>
+        </div>
+        
+        <button onclick="uploadFile()" id="uploadBtn">上传</button>
+        
+        <div id="result"></div>
+    </div>
+    
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        
+        // 图片预览
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        async function uploadFile() {
+            const file = fileInput.files[0];
+            const studentId = document.getElementById('studentId').value.trim();
+            const resultDiv = document.getElementById('result');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (!file) {
+                alert('请选择文件');
+                return;
+            }
+            
+            if (!studentId) {
+                alert('请输入学号');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('studentId', studentId);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p class="info">正在上传，请稍候...</p>';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('http://localhost:8081/upload/schedule', {
+                    method: 'POST',
+                    body: formData
+                    // 测试环境不需要 credentials，因为没有登录
+                });
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                const result = await response.json();
+                
+                let html = `<h3>上传结果：</h3>`;
+                html += `<p><strong>耗时：</strong>${duration}ms</p>`;
+                
+                if (result.code === 200) {
+                    html += `<p class="success">✅ 上传成功！</p>`;
+                    html += `<p><strong>文件 URL：</strong></p>`;
+                    html += `<pre><a href="${result.data}" target="_blank">${result.data}</a></pre>`;
+                    html += `<p><strong>原始响应：</strong></p>`;
+                    html += `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    
+                    // 尝试加载图片
+                    html += `<p><strong>图片预览：</strong></p>`;
+                    html += `<img src="${result.data}" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" onerror="this.style.display='none'">`;
+                    
+                    console.log('✅ 上传成功，URL:', result.data);
+                } else {
+                    html += `<p class="error">❌ 上传失败：${result.msg || '未知错误'}</p>`;
+                    html += `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    console.error('❌ 上传失败:', result);
+                }
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>上传失败</h3>
+                    <p class="error">❌ 错误：${error.message}</p>
+                    <p class="info">请检查：</p>
+                    <ul>
+                        <li>服务是否已启动（http://localhost:8081）</li>
+                        <li>网络连接是否正常</li>
+                        <li>浏览器控制台查看详细错误信息</li>
+                    </ul>
+                `;
+                console.error('❌ 上传错误:', error);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传';
+            }
+        }
+    </script>
+</body>
+</html>

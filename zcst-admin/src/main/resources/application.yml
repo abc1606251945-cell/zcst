@@ -153,3 +153,18 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+dromara:
+  x-file-storage:
+    default-platform: aliyun-oss-1
+    thumbnail-suffix: ".min.jpg"
+
+    aliyun-oss:
+      - platform: aliyun-oss-1
+        enable-storage: true
+        access-key: LTAI5t5fesnUgSJFTDfzuwax
+        secret-key: yXf4q0qzJy28rfOzIlfVZs0b2Kr7RA
+        end-point: oss-cn-beijing.aliyuncs.com
+        bucket-name: zcsst-student-timetable
+        domain: https://zcsst-student-timetable.oss-cn-beijing.aliyuncs.com/
+        base-path: timetable/

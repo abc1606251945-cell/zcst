@@ -1,7 +1,9 @@
 package com.zcst.manage.service.impl;
 
+import com.zcst.manage.constant.AttendanceStatusEnum;
 import com.zcst.manage.domain.AttendanceRecord;
 import com.zcst.manage.domain.DutySchedule;
+import com.zcst.manage.domain.Vo.AttendanceRecordVo;
 import com.zcst.manage.mapper.AttendanceRecordMapper;
 import com.zcst.manage.mapper.DutyScheduleMapper;
 import com.zcst.manage.service.IAttendanceRecordService;
@@ -199,9 +201,9 @@ public class AttendanceRecordServiceImpl implements IAttendanceRecordService {
 
             // 判断打卡状态（使用打卡时间判断）
             if (checkInTime.before(dutySchedule.getStartTime())) {
-                attendanceRecord.setStatus("0"); // 正常
+                attendanceRecord.setStatus(AttendanceStatusEnum.NORMAL); // 正常
             } else {
-                attendanceRecord.setStatus("1"); // 迟到
+                attendanceRecord.setStatus(AttendanceStatusEnum.LATE); // 迟到
             }
 
             // 保存考勤记录
@@ -274,15 +276,15 @@ public class AttendanceRecordServiceImpl implements IAttendanceRecordService {
             // 判断是否早退
             if (checkOutTime.before(dutySchedule.getEndTime())) {
                 // 早退，更新状态为 2
-                attendanceRecord.setStatus("2");
+                attendanceRecord.setStatus(AttendanceStatusEnum.EARLY_LEAVE);
                 log.info("早退，recordId: {}, studentId: {}", recordId, attendanceRecord.getStudentId());
             } else {
                 // 正常签退，保持原状态或更新为 0
-                if ("1".equals(attendanceRecord.getStatus())) {
+                if (AttendanceStatusEnum.LATE.equals(attendanceRecord.getStatus())) {
                     // 如果打卡时迟到，保持迟到状态
-                    attendanceRecord.setStatus("1");
+                    attendanceRecord.setStatus(AttendanceStatusEnum.LATE);
                 } else {
-                    attendanceRecord.setStatus("0");
+                    attendanceRecord.setStatus(AttendanceStatusEnum.NORMAL);
                 }
             }
 
@@ -313,5 +315,28 @@ public class AttendanceRecordServiceImpl implements IAttendanceRecordService {
     @Override
     public List<AttendanceRecord> selectAttendanceRecordByStudentIdAndMonth(String studentId, String yearMonth) {
         return attendanceRecordMapper.selectAttendanceRecordByStudentIdAndMonth(studentId, yearMonth);
+    }
+
+    /**
+     * 查询考勤记录 VO 列表（支持条件过滤）
+     * 
+     * @param attendanceRecord 查询条件对象
+     * @return 考勤记录 VO 列表
+     */
+    @Override
+    public List<AttendanceRecordVo> selectAttendanceRecordVoList(AttendanceRecord attendanceRecord) {
+        return attendanceRecordMapper.selectAttendanceRecordVoList(attendanceRecord);
+    }
+
+    /**
+     * 根据学生 ID 和月份查询考勤记录 VO
+     * 
+     * @param studentId 学号
+     * @param yearMonth 年月（格式：2026-04）
+     * @return 考勤记录 VO 列表
+     */
+    @Override
+    public List<AttendanceRecordVo> selectAttendanceRecordVoByStudentIdAndMonth(String studentId, String yearMonth) {
+        return attendanceRecordMapper.selectAttendanceRecordVoByStudentIdAndMonth(studentId, yearMonth);
     }
 }

@@ -1,6 +1,7 @@
 package com.zcst.manage.service;
 
 import com.zcst.manage.domain.AttendanceStatistics;
+import com.zcst.manage.domain.Vo.AttendanceStatisticsVo;
 
 import java.util.List;
 
@@ -142,4 +143,33 @@ public interface IAttendanceStatisticsService {
      * @return 考勤统计列表
      */
     public List<AttendanceStatistics> selectAttendanceStatisticsListByVenueId(Integer venueId);
+
+    /**
+     * 根据学生 ID 和年月查询考勤统计 VO
+     * 用于查询某个学生在指定月份的考勤统计详细信息，返回包含关联信息的 VO 对象
+     * 
+     * @param studentId 学生 ID
+     * @param yearMonth 年月（格式：yyyy-MM，如 2026-03）
+     * @return 考勤统计 VO 对象，如果不存在则返回 null
+     */
+    public AttendanceStatisticsVo selectAttendanceStatisticsVoByStudentIdAndMonth(String studentId, String yearMonth);
+
+    /**
+     * 根据场馆 ID 和年月查询考勤统计 VO 列表
+     * 用于查询某个场馆在指定月份所有学生的考勤统计数据，返回包含关联信息的 VO 对象
+     * 
+     * @param venueId 场馆 ID
+     * @param yearMonth 年月（格式：yyyy-MM，如 2026-03）
+     * @return 考勤统计 VO 列表
+     */
+    public List<AttendanceStatisticsVo> selectAttendanceStatisticsVoByVenueIdAndMonth(Integer venueId, String yearMonth);
+
+    /**
+     * 查询考勤统计 VO 列表（支持条件过滤）
+     * 支持按学生 ID、场馆 ID、年月等条件过滤，返回包含关联信息的 VO 对象
+     * 
+     * @param attendanceStatistics 查询条件对象
+     * @return 考勤统计 VO 列表
+     */
+    public List<AttendanceStatisticsVo> selectAttendanceStatisticsVoList(AttendanceStatistics attendanceStatistics);
 }

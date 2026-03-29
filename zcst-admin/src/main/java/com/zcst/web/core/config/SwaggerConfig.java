@@ -1,6 +1,6 @@
 package com.zcst.web.core.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.zcst.common.config.RuoYiConfig;
@@ -12,16 +12,16 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 
 /**
- * Swagger2的接口配置
+ * Swagger2 的接口配置
  * 
  * @author ruoyi
  */
 @Configuration
+@RequiredArgsConstructor
 public class SwaggerConfig
 {
     /** 系统基础配置 */
-    @Autowired
-    private RuoYiConfig ruoyiConfig;
+    private final RuoYiConfig ruoyiConfig;
     
     /**
      * 自定义的 OpenAPI 对象

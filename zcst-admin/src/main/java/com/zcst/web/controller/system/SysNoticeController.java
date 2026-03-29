@@ -1,7 +1,7 @@
 package com.zcst.web.controller.system;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,10 +27,10 @@ import com.zcst.system.service.ISysNoticeService;
  */
 @RestController
 @RequestMapping("/system/notice")
+@RequiredArgsConstructor
 public class SysNoticeController extends BaseController
 {
-    @Autowired
-    private ISysNoticeService noticeService;
+    private final ISysNoticeService noticeService;
 
     /**
      * 获取通知公告列表

@@ -6,6 +6,7 @@ import com.zcst.common.core.domain.entity.SysUser;
 import com.zcst.common.core.page.TableDataInfo;
 import com.zcst.common.utils.SecurityUtils;
 import com.zcst.manage.domain.AttendanceStatistics;
+import com.zcst.manage.domain.Vo.AttendanceStatisticsVo;
 import com.zcst.manage.service.IAttendanceStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +91,7 @@ public class AttendanceStatisticsController extends BaseController {
         }
         
         startPage();
-        List<AttendanceStatistics> list = attendanceStatisticsService.selectAttendanceStatisticsList(attendanceStatistics);
+        List<AttendanceStatisticsVo> list = attendanceStatisticsService.selectAttendanceStatisticsVoList(attendanceStatistics);
         return getDataTable(list);
     }
 
@@ -171,7 +172,7 @@ public class AttendanceStatisticsController extends BaseController {
      */
     @GetMapping("/student/month")
     public AjaxResult getStudentStatisticsByMonth(@RequestParam String studentId, @RequestParam String yearMonth) {
-        AttendanceStatistics statistics = attendanceStatisticsService.selectAttendanceStatisticsByStudentIdAndMonth(studentId, yearMonth);
+        AttendanceStatisticsVo statistics = attendanceStatisticsService.selectAttendanceStatisticsVoByStudentIdAndMonth(studentId, yearMonth);
         return success(statistics);
     }
 
@@ -185,7 +186,7 @@ public class AttendanceStatisticsController extends BaseController {
      */
     @GetMapping("/venue/month")
     public AjaxResult getVenueStatisticsByMonth(@RequestParam Integer venueId, @RequestParam String yearMonth) {
-        List<AttendanceStatistics> statisticsList = attendanceStatisticsService.selectAttendanceStatisticsByVenueIdAndMonth(venueId, yearMonth);
+        List<AttendanceStatisticsVo> statisticsList = attendanceStatisticsService.selectAttendanceStatisticsVoByVenueIdAndMonth(venueId, yearMonth);
         return success(statisticsList);
     }
 }

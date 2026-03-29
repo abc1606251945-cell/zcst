@@ -2,7 +2,7 @@ package com.zcst.web.controller.system;
 
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,10 +29,10 @@ import com.zcst.system.service.ISysPostService;
  */
 @RestController
 @RequestMapping("/system/post")
+@RequiredArgsConstructor
 public class SysPostController extends BaseController
 {
-    @Autowired
-    private ISysPostService postService;
+    private final ISysPostService postService;
 
     /**
      * 获取岗位列表

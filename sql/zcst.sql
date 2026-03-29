@@ -103,7 +103,7 @@ CREATE TABLE `attendance_rule` (
   `updated_at` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`rule_id`),
   UNIQUE KEY `venue_id` (`venue_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='考勤规则配置表';
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='考勤规则配置表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -196,7 +196,7 @@ CREATE TABLE `duty_schedule` (
   `start_time` datetime NOT NULL COMMENT '值班开始时间（格式：2026-03-14 08:00:00）',
   `end_time` datetime NOT NULL COMMENT '值班结束时间（格式：2026-03-14 12:00:00）',
   `remark` varchar(255) DEFAULT NULL COMMENT '备注（非必填）',
-  `attendance_status` char(1) DEFAULT NULL COMMENT '考勤状态（0正常 1迟到 2早退 3缺勤）',
+  `attendance_status` char(1) DEFAULT NULL COMMENT '考勤状态（0 正常 1 迟到 2 早退 3 缺勤）',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`duty_id`),
@@ -1644,4 +1644,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-27 22:47:42
+-- Dump completed on 2026-03-28 22:49:00
