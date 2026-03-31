@@ -49,9 +49,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectStudentScheduleByTimeRange" parameterType="map" resultMap="StudentScheduleResult">
         <include refid="selectStudentScheduleVo"/>
         where student_id = #{studentId}
-        and ((start_time between #{startTime} and #{endTime})
-        or (end_time between #{startTime} and #{endTime})
-        or (start_time &lt;= #{startTime} and end_time &gt;= #{endTime}))
+        and (start_time &lt; #{endTime} and end_time &gt; #{startTime})
     </select>
 
     <select id="selectStudentScheduleByScheduleId" parameterType="integer" resultMap="StudentScheduleResult">

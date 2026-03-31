@@ -128,4 +128,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and start_time <![CDATA[>=]]> #{startDate}
           and start_time <![CDATA[<=]]> #{endDate}
     </delete>
+
+    <!-- 查询学生当前可签到的值班信息 -->
+    <select id="selectCurrentAvailableDuty" parameterType="map" resultMap="DutyScheduleResult">
+        <include refid="selectDutyScheduleVo"/>
+        where ds.student_id = #{studentId}
+          and ds.start_time <![CDATA[<=]]> #{currentTime}
+          and ds.end_time <![CDATA[>=]]> #{currentTime}
+        order by ds.start_time asc
+    </select>
 </mapper>

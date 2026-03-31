@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import com.zcst.manage.mapper.SiqiStudentMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,8 @@ import com.zcst.system.domain.SysUserRole;
 @Service
 public class StudentServiceImpl implements IStudentService 
 {
+    private static final Logger log = LoggerFactory.getLogger(StudentServiceImpl.class);
+
     @Autowired
     private StudentMapper studentMapper ;
     
@@ -237,8 +241,7 @@ public class StudentServiceImpl implements IStudentService
                 }
             }
         } catch (Exception e) {
-            // 记录角色绑定失败的错误日志
-            e.printStackTrace();
+            log.error("自动绑定员工角色失败", e);
         }
     }
 }

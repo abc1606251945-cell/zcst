@@ -106,8 +106,17 @@ public interface DutyScheduleMapper
     /**
      * 批量删除值班表
      * 
-     * @param dutyIds 需要删除的数据ID
+     * @param dutyIds 需要删除的数据 ID
      * @return 结果
      */
     public int deleteDutyScheduleByDutyIds(Integer[] dutyIds);
+
+    /**
+     * 查询学生当前可签到的值班信息
+     * 
+     * @param studentId 学号
+     * @param currentTime 当前时间
+     * @return 可签到的值班信息列表
+     */
+    public List<DutySchedule> selectCurrentAvailableDuty(@Param("studentId") String studentId, @Param("currentTime") Date currentTime);
 }

@@ -112,6 +112,15 @@ public interface IDutyScheduleService
     public boolean autoScheduleByConfig(Integer venueId, Date startDate, Date endDate);
 
     /**
+     * 查询学生当前可签到的值班信息
+     * 
+     * @param studentId 学号
+     * @param currentTime 当前时间，为 null 时使用服务器当前时间
+     * @return 可签到的值班信息列表
+     */
+    public List<DutySchedule> selectCurrentAvailableDuty(String studentId, Date currentTime);
+
+    /**
      * 时间段配置类
      */
     public static class TimeSlot {

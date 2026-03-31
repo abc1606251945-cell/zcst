@@ -56,48 +56,48 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectAttendanceStatisticsVo"/>
         <where>
             <if test="studentId != null and studentId != ''">
-                and `student_id` = #{studentId}
+                and a.`student_id` = #{studentId}
             </if>
             <if test="venueId != null">
-                and `venue_id` = #{venueId}
+                and a.`venue_id` = #{venueId}
             </if>
             <if test="yearMonth != null and yearMonth != ''">
-                and `year_month` = #{yearMonth}
+                and a.`year_month` = #{yearMonth}
             </if>
         </where>
     </select>
 
     <select id="selectAttendanceStatisticsByStudentIdAndMonth" resultMap="AttendanceStatisticsResult">
         <include refid="selectAttendanceStatisticsVo"/>
-        where `student_id` = #{studentId} and `year_month` = #{yearMonth}
+        where a.`student_id` = #{studentId} and a.`year_month` = #{yearMonth}
     </select>
 
     <select id="selectAttendanceStatisticsByVenueIdAndMonth" resultMap="AttendanceStatisticsResult">
         <include refid="selectAttendanceStatisticsVo"/>
-        where `venue_id` = #{venueId} and `year_month` = #{yearMonth}
+        where a.`venue_id` = #{venueId} and a.`year_month` = #{yearMonth}
     </select>
 
     <select id="selectAttendanceStatisticsVoByStudentIdAndMonth" resultMap="AttendanceStatisticsVoResult">
         <include refid="selectAttendanceStatisticsVo"/>
-        where `student_id` = #{studentId} and `year_month` = #{yearMonth}
+        where a.`student_id` = #{studentId} and a.`year_month` = #{yearMonth}
     </select>
 
     <select id="selectAttendanceStatisticsVoByVenueIdAndMonth" resultMap="AttendanceStatisticsVoResult">
         <include refid="selectAttendanceStatisticsVo"/>
-        where `venue_id` = #{venueId} and `year_month` = #{yearMonth}
+        where a.`venue_id` = #{venueId} and a.`year_month` = #{yearMonth}
     </select>
 
     <select id="selectAttendanceStatisticsVoList" resultMap="AttendanceStatisticsVoResult">
         <include refid="selectAttendanceStatisticsVo"/>
         <where>
             <if test="studentId != null and studentId != ''">
-                and `student_id` = #{studentId}
+                and a.`student_id` = #{studentId}
             </if>
             <if test="venueId != null">
-                and `venue_id` = #{venueId}
+                and a.`venue_id` = #{venueId}
             </if>
             <if test="yearMonth != null and yearMonth != ''">
-                and `year_month` = #{yearMonth}
+                and a.`year_month` = #{yearMonth}
             </if>
         </where>
     </select>

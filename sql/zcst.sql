@@ -69,6 +69,9 @@ CREATE TABLE `attendance_record` (
   KEY `idx_student_id` (`student_id`),
   KEY `idx_duty_id` (`duty_id`),
   KEY `idx_check_in_time` (`check_in_time`),
+  KEY `idx_student_checkin` (`student_id`,`check_in_time`),
+  KEY `idx_checkin_time` (`check_in_time`),
+  KEY `idx_duty_checkin` (`duty_id`,`check_in_time`),
   CONSTRAINT `fk_attendance_duty` FOREIGN KEY (`duty_id`) REFERENCES `duty_schedule` (`duty_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='考勤记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -140,7 +143,6 @@ CREATE TABLE `attendance_statistics` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`stat_id`),
   UNIQUE KEY `uk_student_year_month` (`student_id`,`year_month`),
-  KEY `idx_student_id` (`student_id`),
   KEY `idx_venue_id` (`venue_id`),
   KEY `idx_year_month` (`year_month`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='考勤统计表';
@@ -202,7 +204,9 @@ CREATE TABLE `duty_schedule` (
   PRIMARY KEY (`duty_id`),
   KEY `idx_student_id` (`student_id`),
   KEY `idx_venue_id` (`venue_id`),
-  KEY `idx_duty_time` (`start_time`,`end_time`)
+  KEY `idx_duty_time` (`start_time`,`end_time`),
+  KEY `idx_student_time` (`student_id`,`start_time`,`end_time`),
+  KEY `idx_venue_time` (`venue_id`,`start_time`,`end_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2563 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='值班表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1644,4 +1648,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-28 22:49:00
+-- Dump completed on 2026-03-29 15:30:03

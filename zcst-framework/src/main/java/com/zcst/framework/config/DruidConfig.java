@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -32,6 +34,8 @@ import jakarta.servlet.ServletResponse;
 @Configuration
 public class DruidConfig
 {
+    private static final Logger log = LoggerFactory.getLogger(DruidConfig.class);
+
     @Bean
     @ConfigurationProperties("spring.datasource.druid.master")
     public DataSource masterDataSource(DruidProperties druidProperties)
@@ -68,14 +72,13 @@ public class DruidConfig
      */
     public void setDataSource(Map<Object, Object> targetDataSources, String sourceName, String beanName)
     {
-        try
+        if (!SpringUtils.containsBean(beanName))
         {
-            DataSource dataSource = SpringUtils.getBean(beanName);
-            targetDataSources.put(sourceName, dataSource);
+            log.debug("未检测到数据源 Bean: {}", beanName);
+            return;
         }
-        catch (Exception e)
-        {
-        }
+        DataSource dataSource = SpringUtils.getBean(beanName);
+        targetDataSources.put(sourceName, dataSource);
     }
 
     /**

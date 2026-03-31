@@ -84,9 +84,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectAttendanceRecordByStudentIdAndMonth" resultMap="AttendanceRecordResult">
         <include refid="selectAttendanceRecordVo"/>
-        where `student_id` = #{studentId} 
-        and `check_in_time` &gt;= CONCAT(#{yearMonth}, '-01 00:00:00')
-        and `check_in_time` &lt; DATE_FORMAT(DATE_ADD(CONCAT(#{yearMonth}, '-01'), INTERVAL 1 MONTH), '%Y-%m-01 00:00:00')
+        where a.`student_id` = #{studentId} 
+        and a.`check_in_time` &gt;= CONCAT(#{yearMonth}, '-01 00:00:00')
+        and a.`check_in_time` &lt; DATE_FORMAT(DATE_ADD(CONCAT(#{yearMonth}, '-01'), INTERVAL 1 MONTH), '%Y-%m-01 00:00:00')
     </select>
 
     <select id="selectAttendanceRecordByDutyIds" resultMap="AttendanceRecordResult">
@@ -117,9 +117,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectAttendanceRecordVoByStudentIdAndMonth" resultMap="AttendanceRecordVoResult">
         <include refid="selectAttendanceRecordVo"/>
-        where `student_id` = #{studentId} 
-        and `check_in_time` &gt;= CONCAT(#{yearMonth}, '-01 00:00:00')
-        and `check_in_time` &lt; DATE_FORMAT(DATE_ADD(CONCAT(#{yearMonth}, '-01'), INTERVAL 1 MONTH), '%Y-%m-01 00:00:00')
+        where a.`student_id` = #{studentId} 
+        and a.`check_in_time` &gt;= CONCAT(#{yearMonth}, '-01 00:00:00')
+        and a.`check_in_time` &lt; DATE_FORMAT(DATE_ADD(CONCAT(#{yearMonth}, '-01'), INTERVAL 1 MONTH), '%Y-%m-01 00:00:00')
     </select>
 
     <insert id="insertAttendanceRecord" parameterType="com.zcst.manage.domain.AttendanceRecord">

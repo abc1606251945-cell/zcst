@@ -158,7 +158,7 @@ public class GenTableServiceImpl implements IGenTableService
     @Override
     public boolean createTable(String sql)
     {
-        return genTableMapper.createTable(sql) == 0;
+        return genTableMapper.createTable(sql) >= 0;
     }
 
     /**

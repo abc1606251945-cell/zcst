@@ -126,22 +126,17 @@ public class SysRegisterService
         String password = registerBody.getPassword();
         String name = registerBody.getName();
         String gender = registerBody.getGender();
-        Long deptId = registerBody.getDeptId();
         Long venueId = registerBody.getVenueId();
 
         SysUser sysUser = new SysUser();
         sysUser.setUserName(username);
 
-        if (StringUtils.isEmpty(username)) {
-            msg = "用户昵称不能为空";
-        } else if (StringUtils.isEmpty(password)) {
+        if (StringUtils.isEmpty(password)) {
             msg = "用户密码不能为空";
         } else if (StringUtils.isEmpty(name)) {
             msg = "姓名不能为空";
         } else if (StringUtils.isEmpty(gender)) {
             msg = "性别不能为空";
-        } else if (deptId == null) {
-            msg = "部门岗位不能为空";
         } else if (venueId == null) {
             msg = "所在场馆不能为空";
         } else if (username.length() < UserConstants.USERNAME_MIN_LENGTH
@@ -154,11 +149,10 @@ public class SysRegisterService
         } else {
             sysUser.setNickName(name);
             sysUser.setSex(gender);
-            sysUser.setDeptId(deptId);
             sysUser.setVenueId(venueId);
             sysUser.setPwdUpdateDate(DateUtils.getNowDate());
             sysUser.setPassword(SecurityUtils.encryptPassword(password));
-            // 设置为管理人员角色（假设角色ID为3）
+            // 设置为管理人员角色（假设角色 ID 为 3）
             sysUser.setRoleIds(new Long[]{3L});
             boolean regFlag = userService.registerUser(sysUser);
             if (!regFlag) {

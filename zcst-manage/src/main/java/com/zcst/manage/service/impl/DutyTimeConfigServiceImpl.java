@@ -6,6 +6,7 @@ import com.zcst.manage.mapper.DutyTimeConfigMapper;
 import com.zcst.manage.service.IDutyTimeConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -56,6 +57,7 @@ public class DutyTimeConfigServiceImpl implements IDutyTimeConfigService
     }
 
     @Override
+    @Transactional
     public int updateDutyTimeConfig(DutyTimeConfig dutyTimeConfig)
     {
         // 格式化时间，防止前端传ISO格式
@@ -64,7 +66,9 @@ public class DutyTimeConfigServiceImpl implements IDutyTimeConfigService
         
         // 检查是否从启用变为禁用
         DutyTimeConfig oldConfig = dutyTimeConfigMapper.selectDutyTimeConfigByConfigId(dutyTimeConfig.getConfigId());
-        if (oldConfig != null && oldConfig.getIsEnable() == 1 && dutyTimeConfig.getIsEnable() == 0) {
+        Integer oldEnable = oldConfig != null ? oldConfig.getIsEnable() : null;
+        Integer newEnable = dutyTimeConfig.getIsEnable();
+        if (Integer.valueOf(1).equals(oldEnable) && Integer.valueOf(0).equals(newEnable)) {
             // 当从启用变为禁用时，删除该时段的所有值班信息
             dutyScheduleMapper.deleteDutyScheduleByVenueAndTime(dutyTimeConfig.getVenueId(), normalizeTime(dutyTimeConfig.getStartTime()), normalizeTime(dutyTimeConfig.getEndTime()));
         }
@@ -117,6 +121,7 @@ public class DutyTimeConfigServiceImpl implements IDutyTimeConfigService
     }
 
     @Override
+    @Transactional
     public int deleteDutyTimeConfigByConfigId(Integer configId)
     {
         DutyTimeConfig config = dutyTimeConfigMapper.selectDutyTimeConfigByConfigId(configId);
@@ -127,6 +132,7 @@ public class DutyTimeConfigServiceImpl implements IDutyTimeConfigService
     }
 
     @Override
+    @Transactional
     public int deleteDutyTimeConfigByConfigIds(Integer[] configIds)
     {
         if (configIds != null) {

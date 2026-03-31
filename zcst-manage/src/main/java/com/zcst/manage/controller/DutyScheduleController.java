@@ -8,6 +8,7 @@ import com.zcst.manage.domain.dto.AutoScheduleDTO;
 import com.zcst.manage.domain.dto.AutoScheduleByConfigDTO;
 import com.zcst.manage.service.IDutyScheduleService;
 import com.zcst.manage.service.IVenueService;
+
 import com.zcst.common.core.domain.entity.SysRole;
 import com.zcst.common.core.domain.entity.SysUser;
 import com.zcst.common.annotation.Log;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
@@ -36,6 +38,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -50,6 +53,7 @@ import java.util.List;
 public class DutyScheduleController extends BaseController
 {
     private static final Logger log = LoggerFactory.getLogger(DutyScheduleController.class);
+
     @Autowired
     private IDutyScheduleService dutyScheduleService;
 
@@ -357,5 +361,40 @@ public class DutyScheduleController extends BaseController
         } else {
             return error("自动排班失败，可能是该场馆没有学生或值班时间配置");
         }
+    }
+
+    /**
+     * 查询学生当前可签到的值班信息
+     * 学生可以通过此接口获取当前可以签到的值班记录（dutyId）
+     * 
+     * @param studentId 学号，为空时自动使用当前登录用户的学号
+     * @return 可签到的值班信息列表
+     */
+    @GetMapping("/currentDuty")
+    public AjaxResult getCurrentDuty(@RequestParam(value = "studentId", required = false) String studentId)
+    {
+        // 如果未指定学号，使用当前登录用户的信息
+        if (studentId == null || studentId.isEmpty()) {
+            SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+            if (currentUser == null) {
+                return error("未登录或用户信息不存在");
+            }
+            studentId = currentUser.getUserName();
+            if (studentId == null || studentId.isEmpty()) {
+                return error("无法获取用户学号");
+            }
+            log.info("未指定学号，使用当前登录用户：{}", studentId);
+        }
+        
+        // 查询学生当前可签到的值班信息
+        List<DutySchedule> currentDutyList = dutyScheduleService.selectCurrentAvailableDuty(studentId, null);
+        
+        if (currentDutyList.isEmpty()) {
+            log.info("学生 {} 当前没有可签到的值班", studentId);
+            return success(new ArrayList<>());
+        }
+        
+        log.info("学生 {} 当前可签到的值班数量：{}", studentId, currentDutyList.size());
+        return success(currentDutyList);
     }
 }

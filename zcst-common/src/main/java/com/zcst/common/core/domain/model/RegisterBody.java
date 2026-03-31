@@ -20,7 +20,7 @@ public class RegisterBody extends LoginBody
     private Long venueId;
     private String grade;
 
-    // 管理人员注册字段
+    // 管理人员注册字段（保留 deptId 以兼容旧代码，但不再强制要求）
     private Long deptId;
 
     public String getType() {

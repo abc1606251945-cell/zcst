@@ -29,10 +29,10 @@ public class AvailableStudentVo
     /** 手机号码 */
     private String phone;
 
-    /** 场馆ID */
+    /** 场馆 ID */
     private Long venueId;
 
-    /** 总值班时长（毫秒） */
+    /** 总值班时长（秒） */
     private long totalDutyTime;
 
     /** 专业名称 */
