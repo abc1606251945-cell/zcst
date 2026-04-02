@@ -86,6 +86,19 @@ public class UserDetailsServiceImpl implements UserDetailsService
             user.setPassword(SecurityUtils.encryptPassword(user.getPassword()));
         }
 
+        if (isStudent)
+        {
+            user.setAccountType("student");
+        }
+        else if (user.isAdmin())
+        {
+            user.setAccountType("admin");
+        }
+        else
+        {
+            user.setAccountType("manager");
+        }
+
         passwordService.validate(user);
 
         return createLoginUser(user);
@@ -119,6 +132,7 @@ public class UserDetailsServiceImpl implements UserDetailsService
             user.setStatus("0"); // 正常状态
             user.setDelFlag("0"); // 未删除
             user.setDeptId(1L); // 默认部门
+            user.setAccountType("student");
         } catch (Exception e) {
             log.error("转换学生信息失败: {}", e.getMessage());
         }

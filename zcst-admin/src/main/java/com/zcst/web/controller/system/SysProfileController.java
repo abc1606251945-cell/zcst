@@ -48,6 +48,23 @@ public class SysProfileController extends BaseController
     {
         LoginUser loginUser = getLoginUser();
         SysUser user = loginUser.getUser();
+        if (StringUtils.isEmpty(user.getAccountType()))
+        {
+            SysUser dbUser = userService.selectUserByUserName(user.getUserName());
+            if (dbUser == null)
+            {
+                user.setAccountType("student");
+            }
+            else if (user.isAdmin())
+            {
+                user.setAccountType("admin");
+            }
+            else
+            {
+                user.setAccountType("manager");
+            }
+            tokenService.setLoginUser(loginUser);
+        }
         AjaxResult ajax = AjaxResult.success(user);
         ajax.put("roleGroup", userService.selectUserRoleGroup(loginUser.getUsername()));
         ajax.put("postGroup", userService.selectUserPostGroup(loginUser.getUsername()));
