@@ -98,7 +98,11 @@ public class GlobalExceptionHandler
     {
         String requestURI = request.getRequestURI();
         log.error("请求地址'{}',发生未知异常.", requestURI, e);
-        return AjaxResult.error(e.getMessage());
+        String msg = e.getMessage();
+        if (StringUtils.isEmpty(msg)) {
+            msg = "系统异常(" + e.getClass().getSimpleName() + ")";
+        }
+        return AjaxResult.error(msg);
     }
 
     /**
@@ -109,7 +113,11 @@ public class GlobalExceptionHandler
     {
         String requestURI = request.getRequestURI();
         log.error("请求地址'{}',发生系统异常.", requestURI, e);
-        return AjaxResult.error(e.getMessage());
+        String msg = e.getMessage();
+        if (StringUtils.isEmpty(msg)) {
+            msg = "系统异常(" + e.getClass().getSimpleName() + ")";
+        }
+        return AjaxResult.error(msg);
     }
 
     /**

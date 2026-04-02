@@ -23,7 +23,6 @@ import com.zcst.framework.web.service.SysPermissionService;
 import com.zcst.framework.web.service.TokenService;
 import com.zcst.system.service.ISysConfigService;
 import com.zcst.system.service.ISysMenuService;
-import com.zcst.system.service.ISysUserService;
 
 /**
  * 登录验证
@@ -43,8 +42,6 @@ public class SysLoginController
     private final TokenService tokenService;
 
     private final ISysConfigService configService;
-
-    private final ISysUserService userService;
 
     /**
      * 登录方法
@@ -73,24 +70,6 @@ public class SysLoginController
     {
         LoginUser loginUser = SecurityUtils.getLoginUser();
         SysUser user = loginUser.getUser();
-        boolean shouldRefreshToken = false;
-        if (StringUtils.isEmpty(user.getAccountType()))
-        {
-            SysUser dbUser = userService.selectUserByUserName(user.getUserName());
-            if (dbUser == null)
-            {
-                user.setAccountType("student");
-            }
-            else if (user.isAdmin())
-            {
-                user.setAccountType("admin");
-            }
-            else
-            {
-                user.setAccountType("manager");
-            }
-            shouldRefreshToken = true;
-        }
         // 角色集合
         Set<String> roles = permissionService.getRolePermission(user);
         // 权限集合
@@ -98,10 +77,6 @@ public class SysLoginController
         if (!loginUser.getPermissions().equals(permissions))
         {
             loginUser.setPermissions(permissions);
-            shouldRefreshToken = true;
-        }
-        if (shouldRefreshToken)
-        {
             tokenService.refreshToken(loginUser);
         }
         AjaxResult ajax = AjaxResult.success();

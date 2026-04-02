@@ -1,5 +1,6 @@
 package com.zcst.manage.service.impl;
 
+import com.zcst.common.exception.ServiceException;
 import com.zcst.manage.domain.DutySchedule;
 import com.zcst.manage.domain.DutyTimeConfig;
 import com.zcst.manage.domain.Student;
@@ -13,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -141,6 +144,18 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
     @Transactional(rollbackFor = Exception.class)
     public boolean autoSchedule(Integer venueId, Date startDate, Date endDate, List<IDutyScheduleService.TimeSlot> timeSlots)
     {
+        if (venueId == null) {
+            throw new ServiceException("场馆不能为空");
+        }
+        if (startDate == null) {
+            throw new ServiceException("开始日期不能为空");
+        }
+        if (endDate == null) {
+            throw new ServiceException("结束日期不能为空");
+        }
+        if (timeSlots == null || timeSlots.isEmpty()) {
+            throw new ServiceException("值班时段不能为空");
+        }
         // TODO: 添加并发控制，防止同时为同一场馆排班
         // 建议使用 Redis 分布式锁：String lockKey = "duty_schedule_lock_" + venueId + "_" + startTime;
         
@@ -168,38 +183,64 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
             studentDutyTimes.putIfAbsent(s.getStudentId(), 0L);
         }
 
-        // 生成排班计划
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(startDate);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
+        ZoneId zoneId = ZoneId.systemDefault();
+        LocalDate startDay = startDate.toInstant().atZone(zoneId).toLocalDate();
+        LocalDate endDay = endDate.toInstant().atZone(zoneId).toLocalDate();
 
-        // 使用更严谨的日期比较
-        Calendar endCalendar = Calendar.getInstance();
-        endCalendar.setTime(endDate);
-        // 如果 endDate 是日期（00:00:00），为了包含这一天，我们需要检查到这一天结束
-        if (endCalendar.get(Calendar.HOUR_OF_DAY) == 0 && endCalendar.get(Calendar.MINUTE) == 0 
-                && endCalendar.get(Calendar.SECOND) == 0 && endCalendar.get(Calendar.MILLISECOND) == 0) {
-            endCalendar.set(Calendar.HOUR_OF_DAY, 23);
-            endCalendar.set(Calendar.MINUTE, 59);
-            endCalendar.set(Calendar.SECOND, 59);
-            endCalendar.set(Calendar.MILLISECOND, 999);
+        Calendar rangeStartCal = Calendar.getInstance();
+        rangeStartCal.setTime(Date.from(startDay.minusDays(1).atStartOfDay(zoneId).toInstant()));
+        rangeStartCal.set(Calendar.HOUR_OF_DAY, 0);
+        rangeStartCal.set(Calendar.MINUTE, 0);
+        rangeStartCal.set(Calendar.SECOND, 0);
+        rangeStartCal.set(Calendar.MILLISECOND, 0);
+
+        Calendar rangeEndCal = Calendar.getInstance();
+        rangeEndCal.setTime(Date.from(endDay.atStartOfDay(zoneId).toInstant()));
+        rangeEndCal.set(Calendar.HOUR_OF_DAY, 23);
+        rangeEndCal.set(Calendar.MINUTE, 59);
+        rangeEndCal.set(Calendar.SECOND, 59);
+        rangeEndCal.set(Calendar.MILLISECOND, 999);
+
+        List<Map<String, Object>> existingDutyDates = dutyScheduleMapper.selectStudentDutyDatesInRange(studentIds, rangeStartCal.getTime(), rangeEndCal.getTime());
+        Set<String> studentDutyDayKeys = new HashSet<>();
+        for (Map<String, Object> row : existingDutyDates) {
+            Object sidObj = row.get("studentId");
+            Object dateObj = row.get("dutyDate");
+            if (sidObj == null || dateObj == null) {
+                continue;
+            }
+            String sid = String.valueOf(sidObj);
+            LocalDate dutyDate;
+            if (dateObj instanceof Date) {
+                dutyDate = ((Date) dateObj).toInstant().atZone(zoneId).toLocalDate();
+            } else {
+                dutyDate = LocalDate.parse(String.valueOf(dateObj));
+            }
+            studentDutyDayKeys.add(sid + "|" + dutyDate);
         }
 
-        while (!calendar.after(endCalendar)) {
-            // 对每个时间段进行排班
+        for (LocalDate day = startDay; !day.isAfter(endDay); day = day.plusDays(1)) {
             for (IDutyScheduleService.TimeSlot slot : timeSlots) {
-                // 解析时间段
                 String[] startParts = slot.getStartTime().split(":");
                 String[] endParts = slot.getEndTime().split(":");
 
-                calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(startParts[0]));
-                calendar.set(Calendar.MINUTE, Integer.parseInt(startParts[1]));
-                Date slotStart = calendar.getTime();
+                int startHour = Integer.parseInt(startParts[0]);
+                int startMinute = Integer.parseInt(startParts[1]);
+                int startSecond = startParts.length >= 3 ? Integer.parseInt(startParts[2]) : 0;
+                int endHour = Integer.parseInt(endParts[0]);
+                int endMinute = Integer.parseInt(endParts[1]);
+                int endSecond = endParts.length >= 3 ? Integer.parseInt(endParts[2]) : 0;
 
-                calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(endParts[0]));
-                calendar.set(Calendar.MINUTE, Integer.parseInt(endParts[1]));
-                Date slotEnd = calendar.getTime();
+                if (startHour == endHour && startMinute == endMinute && startSecond == endSecond) {
+                    continue;
+                }
+
+                Date slotStart = Date.from(day.atTime(startHour, startMinute, startSecond).atZone(zoneId).toInstant());
+                LocalDate slotEndDay = (endHour < startHour
+                        || (endHour == startHour && (endMinute < startMinute || (endMinute == startMinute && endSecond < startSecond))))
+                        ? day.plusDays(1)
+                        : day;
+                Date slotEnd = Date.from(slotEndDay.atTime(endHour, endMinute, endSecond).atZone(zoneId).toInstant());
 
                 // 1. 检查场馆该时段是否已经排满（暂时硬编码为2人，建议从配置读取）
                 // TODO: 从配置中读取每个时段的最大人数
@@ -211,14 +252,36 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
                 int needed = maxStudentsPerSlot - existingCount;
 
                 // 2. 筛选可用学生 (无课 且 该时段没在其他地方值班)
-                List<Student> availableStudents = students.stream()
+                List<Student> baseCandidates = students.stream()
                         .filter(s -> !studentScheduleService.hasClass(s.getStudentId(), slotStart, slotEnd))
                         .filter(s -> dutyScheduleMapper.selectOverlappingDuty(s.getStudentId(), slotStart, slotEnd).isEmpty())
                         .collect(Collectors.toList());
 
-                if (!availableStudents.isEmpty()) {
-                    // 选择值班时长最少的学生
-                    availableStudents.sort(Comparator.comparingLong(s -> studentDutyTimes.getOrDefault(s.getStudentId(), 0L)));
+                if (!baseCandidates.isEmpty()) {
+                    String dayStr = day.toString();
+                    String yesterdayStr = day.minusDays(1).toString();
+
+                    List<Student> strictCandidates = baseCandidates.stream()
+                            .filter(s -> !studentDutyDayKeys.contains(s.getStudentId() + "|" + dayStr))
+                            .filter(s -> !studentDutyDayKeys.contains(s.getStudentId() + "|" + yesterdayStr))
+                            .collect(Collectors.toList());
+
+                    List<Student> availableStudents;
+                    if (strictCandidates.size() >= needed) {
+                        availableStudents = strictCandidates;
+                    } else {
+                        availableStudents = baseCandidates.stream()
+                                .filter(s -> !studentDutyDayKeys.contains(s.getStudentId() + "|" + dayStr))
+                                .collect(Collectors.toList());
+                    }
+
+                    if (availableStudents.size() < needed) {
+                        availableStudents = baseCandidates;
+                    }
+
+                    availableStudents.sort(Comparator
+                            .comparingLong((Student s) -> studentDutyTimes.getOrDefault(s.getStudentId(), 0L))
+                            .thenComparing(Student::getStudentId));
                     int assignCount = Math.min(needed, availableStudents.size());
                     
                     for (int i = 0; i < assignCount; i++) {
@@ -239,12 +302,11 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
                         long dutyDuration = (slotEnd.getTime() - slotStart.getTime()) / 1000; // 毫秒转秒
                         studentDutyTimes.put(selectedStudent.getStudentId(), 
                                 studentDutyTimes.get(selectedStudent.getStudentId()) + dutyDuration);
+
+                        studentDutyDayKeys.add(selectedStudent.getStudentId() + "|" + dayStr);
                     }
                 }
             }
-
-            // 移到下一天
-            calendar.add(Calendar.DATE, 1);
         }
 
         return true;
@@ -262,6 +324,12 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
     @Transactional(rollbackFor = Exception.class)
     public boolean autoScheduleByConfig(Integer venueId, Date startDate, int weeks)
     {
+        if (startDate == null) {
+            throw new ServiceException("开始日期不能为空");
+        }
+        if (weeks <= 0) {
+            throw new ServiceException("排班周数必须大于0");
+        }
         // 计算结束日期
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(startDate);
@@ -292,6 +360,9 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
     @Transactional(rollbackFor = Exception.class)
     public boolean autoScheduleByConfig(Integer venueId, Date startDate, Date endDate)
     {
+        if (startDate == null || endDate == null) {
+            throw new ServiceException("开始日期和结束日期不能为空");
+        }
         List<DutyTimeConfig> configs = dutyTimeConfigService.selectDutyTimeConfigByVenueId(venueId);
         if (configs.isEmpty()) {
             return false;

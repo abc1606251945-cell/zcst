@@ -381,6 +381,15 @@ public class DutyScheduleController extends BaseController
         Date startDate = parseClientDate(dto.getStartDate());
         Date endDate = parseClientDate(dto.getEndDate());
         Integer weeks = dto.getWeeks();
+        if (venueId == null) {
+            return AjaxResult.error("场馆不能为空");
+        }
+        if (startDate == null) {
+            return AjaxResult.error("开始日期不能为空或格式不正确");
+        }
+        if (endDate == null && (weeks == null || weeks < 1)) {
+            return AjaxResult.error("排班周数不能为空");
+        }
 
         // 验证权限：非超级管理员只能为自己场馆排班
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();

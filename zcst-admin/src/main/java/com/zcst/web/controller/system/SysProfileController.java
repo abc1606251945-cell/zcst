@@ -16,6 +16,7 @@ import com.zcst.common.core.controller.BaseController;
 import com.zcst.common.core.domain.AjaxResult;
 import com.zcst.common.core.domain.entity.SysUser;
 import com.zcst.common.core.domain.model.LoginUser;
+import com.zcst.common.constant.UserConstants;
 import com.zcst.common.enums.BusinessType;
 import com.zcst.common.utils.DateUtils;
 import com.zcst.common.utils.SecurityUtils;
@@ -48,23 +49,6 @@ public class SysProfileController extends BaseController
     {
         LoginUser loginUser = getLoginUser();
         SysUser user = loginUser.getUser();
-        if (StringUtils.isEmpty(user.getAccountType()))
-        {
-            SysUser dbUser = userService.selectUserByUserName(user.getUserName());
-            if (dbUser == null)
-            {
-                user.setAccountType("student");
-            }
-            else if (user.isAdmin())
-            {
-                user.setAccountType("admin");
-            }
-            else
-            {
-                user.setAccountType("manager");
-            }
-            tokenService.setLoginUser(loginUser);
-        }
         AjaxResult ajax = AjaxResult.success(user);
         ajax.put("roleGroup", userService.selectUserRoleGroup(loginUser.getUsername()));
         ajax.put("postGroup", userService.selectUserPostGroup(loginUser.getUsername()));
@@ -80,11 +64,26 @@ public class SysProfileController extends BaseController
     {
         LoginUser loginUser = getLoginUser();
         SysUser currentUser = loginUser.getUser();
-        currentUser.setNickName(user.getNickName());
-        currentUser.setEmail(user.getEmail());
-        currentUser.setPhonenumber(user.getPhonenumber());
-        currentUser.setSex(user.getSex());
-        currentUser.setVenueId(user.getVenueId());
+        if (StringUtils.isNotEmpty(user.getNickName()))
+        {
+            currentUser.setNickName(user.getNickName());
+        }
+        if (user.getEmail() != null)
+        {
+            currentUser.setEmail(user.getEmail());
+        }
+        if (user.getPhonenumber() != null)
+        {
+            currentUser.setPhonenumber(user.getPhonenumber());
+        }
+        if (StringUtils.isNotEmpty(user.getSex()))
+        {
+            currentUser.setSex(user.getSex());
+        }
+        if (user.getVenueId() != null)
+        {
+            currentUser.setVenueId(user.getVenueId());
+        }
         if (StringUtils.isNotEmpty(user.getPhonenumber()) && !userService.checkPhoneUnique(currentUser))
         {
             return error("修改用户'" + loginUser.getUsername() + "'失败，手机号码已存在");
@@ -111,6 +110,14 @@ public class SysProfileController extends BaseController
     {
         String oldPassword = params.get("oldPassword");
         String newPassword = params.get("newPassword");
+        if (StringUtils.isEmpty(oldPassword) || StringUtils.isEmpty(newPassword))
+        {
+            return error("修改密码失败，密码不能为空");
+        }
+        if (newPassword.length() < UserConstants.PASSWORD_MIN_LENGTH || newPassword.length() > UserConstants.PASSWORD_MAX_LENGTH)
+        {
+            return error("修改密码失败，新密码长度必须在" + UserConstants.PASSWORD_MIN_LENGTH + "-" + UserConstants.PASSWORD_MAX_LENGTH + "位之间");
+        }
         LoginUser loginUser = getLoginUser();
         Long userId = loginUser.getUserId();
         SysUser user = userService.selectUserById(userId);

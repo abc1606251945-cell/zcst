@@ -1,5 +1,6 @@
 package com.zcst.manage.service.impl;
 
+import com.zcst.common.exception.ServiceException;
 import com.zcst.manage.domain.DutyTimeConfig;
 import com.zcst.manage.mapper.DutyScheduleMapper;
 import com.zcst.manage.mapper.DutyTimeConfigMapper;
@@ -52,6 +53,22 @@ public class DutyTimeConfigServiceImpl implements IDutyTimeConfigService
         // 格式化时间，防止前端传ISO格式
         dutyTimeConfig.setStartTime(formatTime(dutyTimeConfig.getStartTime()));
         dutyTimeConfig.setEndTime(formatTime(dutyTimeConfig.getEndTime()));
+        if (dutyTimeConfig.getVenueId() == null) {
+            throw new ServiceException("场馆不能为空");
+        }
+        if (dutyTimeConfig.getStartTime() == null || dutyTimeConfig.getStartTime().trim().isEmpty()) {
+            throw new ServiceException("开始时间不能为空");
+        }
+        if (dutyTimeConfig.getEndTime() == null || dutyTimeConfig.getEndTime().trim().isEmpty()) {
+            throw new ServiceException("结束时间不能为空");
+        }
+        if (dutyTimeConfig.getStartTime() != null && dutyTimeConfig.getStartTime().equals(dutyTimeConfig.getEndTime())) {
+            throw new ServiceException("开始时间和结束时间不能相同");
+        }
+        int dup = dutyTimeConfigMapper.countByVenueAndTime(dutyTimeConfig.getVenueId(), dutyTimeConfig.getStartTime(), dutyTimeConfig.getEndTime());
+        if (dup > 0) {
+            throw new ServiceException("该场馆已存在相同的值班时段");
+        }
         dutyTimeConfig.setIsEnable(1); // 默认启用
         return dutyTimeConfigMapper.insertDutyTimeConfig(dutyTimeConfig);
     }
@@ -63,9 +80,34 @@ public class DutyTimeConfigServiceImpl implements IDutyTimeConfigService
         // 格式化时间，防止前端传ISO格式
         dutyTimeConfig.setStartTime(formatTime(dutyTimeConfig.getStartTime()));
         dutyTimeConfig.setEndTime(formatTime(dutyTimeConfig.getEndTime()));
+        if (dutyTimeConfig.getConfigId() == null) {
+            throw new ServiceException("配置ID不能为空");
+        }
+        if (dutyTimeConfig.getVenueId() == null) {
+            throw new ServiceException("场馆不能为空");
+        }
+        if (dutyTimeConfig.getStartTime() == null || dutyTimeConfig.getStartTime().trim().isEmpty()) {
+            throw new ServiceException("开始时间不能为空");
+        }
+        if (dutyTimeConfig.getEndTime() == null || dutyTimeConfig.getEndTime().trim().isEmpty()) {
+            throw new ServiceException("结束时间不能为空");
+        }
+        if (dutyTimeConfig.getStartTime() != null && dutyTimeConfig.getStartTime().equals(dutyTimeConfig.getEndTime())) {
+            throw new ServiceException("开始时间和结束时间不能相同");
+        }
         
         // 检查是否从启用变为禁用
         DutyTimeConfig oldConfig = dutyTimeConfigMapper.selectDutyTimeConfigByConfigId(dutyTimeConfig.getConfigId());
+        boolean shouldCheckDup = oldConfig == null
+                || !dutyTimeConfig.getVenueId().equals(oldConfig.getVenueId())
+                || !dutyTimeConfig.getStartTime().equals(oldConfig.getStartTime())
+                || !dutyTimeConfig.getEndTime().equals(oldConfig.getEndTime());
+        if (shouldCheckDup) {
+            int dup = dutyTimeConfigMapper.countByVenueAndTimeExcludeId(dutyTimeConfig.getConfigId(), dutyTimeConfig.getVenueId(), dutyTimeConfig.getStartTime(), dutyTimeConfig.getEndTime());
+            if (dup > 0) {
+                throw new ServiceException("该场馆已存在相同的值班时段");
+            }
+        }
         Integer oldEnable = oldConfig != null ? oldConfig.getIsEnable() : null;
         Integer newEnable = dutyTimeConfig.getIsEnable();
         if (Integer.valueOf(1).equals(oldEnable) && Integer.valueOf(0).equals(newEnable)) {

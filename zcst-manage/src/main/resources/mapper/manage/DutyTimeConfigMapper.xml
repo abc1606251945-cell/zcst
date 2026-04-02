@@ -60,4 +60,21 @@
             #{configId}
         </foreach>
     </delete>
+
+    <select id="countByVenueAndTime" resultType="int">
+        select count(1)
+        from duty_time_config
+        where venue_id = #{venueId}
+          and start_time = #{startTime}
+          and end_time = #{endTime}
+    </select>
+
+    <select id="countByVenueAndTimeExcludeId" resultType="int">
+        select count(1)
+        from duty_time_config
+        where config_id <![CDATA[<>]]> #{configId}
+          and venue_id = #{venueId}
+          and start_time = #{startTime}
+          and end_time = #{endTime}
+    </select>
 </mapper>

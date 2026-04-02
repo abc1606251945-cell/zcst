@@ -99,6 +99,8 @@ public interface DutyScheduleMapper
      */
     public List<Map<String, Object>> selectStudentsTotalDutyTime(@Param("studentIds") List<String> studentIds);
 
+    public List<Map<String, Object>> selectStudentDutyDatesInRange(@Param("studentIds") List<String> studentIds, @Param("startTime") Date startTime, @Param("endTime") Date endTime);
+
     public int deleteDutyScheduleByVenueAndTime(@Param("venueId") Integer venueId, @Param("startTime") String startTime, @Param("endTime") String endTime);
 
     public int deleteDutyScheduleByVenueAndRange(@Param("venueId") Integer venueId, @Param("startDate") Date startDate, @Param("endDate") Date endDate);

@@ -83,6 +83,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         group by student_id
     </select>
 
+    <select id="selectStudentDutyDatesInRange" resultType="map">
+        select student_id as studentId, date(start_time) as dutyDate
+        from duty_schedule
+        where student_id in
+        <foreach item="studentId" collection="studentIds" open="(" separator="," close=")">
+            #{studentId}
+        </foreach>
+        and start_time <![CDATA[>=]]> #{startTime}
+        and start_time <![CDATA[<=]]> #{endTime}
+        group by student_id, date(start_time)
+    </select>
+
     <insert id="insertDutySchedule" parameterType="com.zcst.manage.domain.DutySchedule">
         insert into duty_schedule (student_id, venue_id, start_time, end_time, remark)
         values (#{studentId}, #{venueId}, #{startTime}, #{endTime}, #{remark})
@@ -115,11 +127,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <delete id="deleteDutyScheduleByVenueAndTime">
         delete from duty_schedule
         where venue_id = #{venueId}
-          and <![CDATA[
-              (time(start_time) >= #{startTime} and time(start_time) < #{endTime}) or
-              (time(end_time) > #{startTime} and time(end_time) <= #{endTime}) or
-              (time(start_time) <= #{startTime} and time(end_time) >= #{endTime})
-          ]]>
+          and time(start_time) = #{startTime}
+          and time(end_time) = #{endTime}
     </delete>
 
     <delete id="deleteDutyScheduleByVenueAndRange">

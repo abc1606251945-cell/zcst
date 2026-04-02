@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,6 +41,9 @@ public class DutyTimeConfigController extends BaseController
 
     @Autowired
     private IVenueService venueService;
+
+    @Autowired
+    private ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
     /**
      * 判断是否为超级管理员
@@ -146,8 +150,14 @@ public class DutyTimeConfigController extends BaseController
         }
         int result = dutyTimeConfigService.insertDutyTimeConfig(dutyTimeConfig);
         if (result > 0) {
-            // 时段发生变化，触发自动重排 (默认排当前周开始的 19 周)
-            dutyScheduleService.autoScheduleByConfig(dutyTimeConfig.getVenueId(), new java.util.Date(), 19);
+            Integer venueId = dutyTimeConfig.getVenueId();
+            threadPoolTaskExecutor.execute(() -> {
+                try {
+                    dutyScheduleService.autoScheduleByConfig(venueId, new java.util.Date(), 19);
+                } catch (Exception e) {
+                    log.error("新增值班时段后自动重排失败，venueId={}", venueId, e);
+                }
+            });
         }
         return toAjax(result);
     }
@@ -188,8 +198,14 @@ public class DutyTimeConfigController extends BaseController
 
         int result = dutyTimeConfigService.updateDutyTimeConfig(dutyTimeConfig);
         if (result > 0) {
-            // 时段发生变化，触发自动重排
-            dutyScheduleService.autoScheduleByConfig(dutyTimeConfig.getVenueId(), new java.util.Date(), 19);
+            Integer venueId = dutyTimeConfig.getVenueId();
+            threadPoolTaskExecutor.execute(() -> {
+                try {
+                    dutyScheduleService.autoScheduleByConfig(venueId, new java.util.Date(), 19);
+                } catch (Exception e) {
+                    log.error("修改值班时段后自动重排失败，venueId={}", venueId, e);
+                }
+            });
         }
         return toAjax(result);
     }
@@ -229,7 +245,13 @@ public class DutyTimeConfigController extends BaseController
         if (result > 0) {
             Date startDate = new Date();
             for (Integer venueId : venueIds) {
-                dutyScheduleService.autoScheduleByConfig(venueId, startDate, 19);
+                threadPoolTaskExecutor.execute(() -> {
+                    try {
+                        dutyScheduleService.autoScheduleByConfig(venueId, startDate, 19);
+                    } catch (Exception e) {
+                        log.error("删除值班时段后自动重排失败，venueId={}", venueId, e);
+                    }
+                });
             }
         }
         return toAjax(result);

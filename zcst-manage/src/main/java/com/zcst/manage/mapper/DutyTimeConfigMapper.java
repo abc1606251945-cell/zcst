@@ -70,4 +70,8 @@ public interface DutyTimeConfigMapper
      * @return 结果
      */
     public int deleteDutyTimeConfigByConfigIds(@Param("configIds") Integer[] configIds);
+
+    public int countByVenueAndTime(@Param("venueId") Integer venueId, @Param("startTime") String startTime, @Param("endTime") String endTime);
+
+    public int countByVenueAndTimeExcludeId(@Param("configId") Integer configId, @Param("venueId") Integer venueId, @Param("startTime") String startTime, @Param("endTime") String endTime);
 }
