@@ -1,6 +1,9 @@
 package com.zcst.manage.controller;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,6 +90,20 @@ public class VenueController extends BaseController
         }
         PageDomain pageDomain = getPageDomain();
         return getDataTable(venueService.selectVenueListWithPage(venue, pageDomain.getPageNum(), pageDomain.getPageSize()));
+    }
+
+    @GetMapping("/simpleList")
+    public AjaxResult simpleList()
+    {
+        List<Venue> list = venueService.selectVenueList(new Venue());
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Venue v : list) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("venueId", v.getVenueId());
+            item.put("venueName", v.getVenueName());
+            result.add(item);
+        }
+        return success(result);
     }
 
     /**

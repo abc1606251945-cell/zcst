@@ -140,8 +140,6 @@ public class StudentServiceImpl implements IStudentService
     public int insertStudent(Student student)
     {
         int result = studentMapper.insertStudent(student);
-        // 自动绑定普通员工角色
-        autoBindEmployeeRole(student);
         return result;
     }
 

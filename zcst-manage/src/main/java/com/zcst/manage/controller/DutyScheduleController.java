@@ -34,11 +34,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -149,6 +151,53 @@ public class DutyScheduleController extends BaseController
             return DateUtils.parseDate(normalized);
         }
         return DateUtils.parseDate(v);
+    }
+
+    private LocalDate toLocalDate(Date date)
+    {
+        return Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+    private Date startOfDay(LocalDate date)
+    {
+        return Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    private Date endOfDay(LocalDate date)
+    {
+        return Date.from(date.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    private Date[] resolveRange(String from, String to, Integer days)
+    {
+        int d = (days == null || days <= 0) ? 7 : days;
+        Date fromDate = parseClientDate(from);
+        Date toDate = parseClientDate(to);
+
+        LocalDate start;
+        LocalDate end;
+
+        if (fromDate == null && toDate == null) {
+            start = LocalDate.now();
+            end = start.plusDays(d - 1L);
+        } else if (fromDate != null && toDate == null) {
+            start = toLocalDate(fromDate);
+            end = start.plusDays(d - 1L);
+        } else if (fromDate == null) {
+            end = toLocalDate(toDate);
+            start = end.minusDays(d - 1L);
+        } else {
+            start = toLocalDate(fromDate);
+            end = toLocalDate(toDate);
+        }
+
+        if (start.isAfter(end)) {
+            LocalDate tmp = start;
+            start = end;
+            end = tmp;
+        }
+
+        return new Date[] { startOfDay(start), endOfDay(end) };
     }
 
     /**
@@ -396,5 +445,64 @@ public class DutyScheduleController extends BaseController
         
         log.info("学生 {} 当前可签到的值班数量：{}", studentId, currentDutyList.size());
         return success(currentDutyList);
+    }
+
+    @GetMapping("/my")
+    public AjaxResult getMyDuties(
+        @RequestParam(value = "from", required = false) String from,
+        @RequestParam(value = "to", required = false) String to,
+        @RequestParam(value = "days", required = false) Integer days
+    )
+    {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null) {
+            return error("未登录或用户信息不存在");
+        }
+        String studentId = currentUser.getUserName();
+        if (studentId == null || studentId.isEmpty()) {
+            return error("无法获取用户学号");
+        }
+
+        Date[] range = resolveRange(from, to, days);
+        DutySchedule query = new DutySchedule();
+        query.setStudentId(studentId);
+        query.setStartTime(range[0]);
+        query.setEndTime(range[1]);
+
+        List<DutySchedule> list = dutyScheduleService.selectDutyScheduleList(query);
+        list.sort(Comparator.comparing(DutySchedule::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+        return success(list);
+    }
+
+    @GetMapping("/myVenue")
+    public AjaxResult getMyVenueDuties(
+        @RequestParam(value = "venueId", required = false) Integer venueId,
+        @RequestParam(value = "from", required = false) String from,
+        @RequestParam(value = "to", required = false) String to,
+        @RequestParam(value = "days", required = false) Integer days
+    )
+    {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null) {
+            return error("未登录或用户信息不存在");
+        }
+
+        Integer resolvedVenueId = venueId;
+        if (!isSuperAdmin(currentUser)) {
+            resolvedVenueId = getVenueIdFromUserRoles(currentUser);
+        }
+        if (resolvedVenueId == null) {
+            return success(new ArrayList<>());
+        }
+
+        Date[] range = resolveRange(from, to, days);
+        DutySchedule query = new DutySchedule();
+        query.setVenueId(resolvedVenueId);
+        query.setStartTime(range[0]);
+        query.setEndTime(range[1]);
+
+        List<DutySchedule> list = dutyScheduleService.selectDutyScheduleList(query);
+        list.sort(Comparator.comparing(DutySchedule::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+        return success(list);
     }
 }
