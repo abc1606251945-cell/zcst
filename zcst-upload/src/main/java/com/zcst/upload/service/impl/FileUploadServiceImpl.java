@@ -173,9 +173,8 @@ public class FileUploadServiceImpl implements FileUploadService {
             // 创建 OSS 客户端
             OSS ossClient = new OSSClientBuilder().build(endpoint, accessKey, secretKey);
             
-            // 构建前缀路径：base-path/schedule/{studentId}/yyyy/MM/dd/
-            // 由于学生 ID 不确定，我们查询 basePath + "schedule/" + datePath 下的所有文件
-            String prefix = basePath + "schedule/";
+            // 构建前缀路径：{base-path}schedule/{yyyy/MM/dd}/
+            String prefix = basePath + "schedule/" + datePath + "/";
             
             log.info("查询 OSS 文件列表，prefix: {}", prefix);
             

@@ -77,6 +77,7 @@ public class SysRegisterService
         String studentId = registerBody.getStudentId();
         String password = registerBody.getPassword();
         String name = registerBody.getName();
+        Long venueId = registerBody.getVenueId();
 
         if (StringUtils.isEmpty(studentId)) {
             msg = "学号不能为空";
@@ -100,7 +101,7 @@ public class SysRegisterService
                 newStudent.setName(name); // 使用用户输入的姓名
                 newStudent.setGender("男"); // 临时默认值，后续在信息完善页面修改
                 newStudent.setPhone("13800138000"); // 临时默认值，后续在信息完善页面修改
-                newStudent.setVenueId(1L); // 临时默认值，后续在信息完善页面修改
+                newStudent.setVenueId(venueId);
                 newStudent.setMajorId(1L); // 临时默认值，后续在信息完善页面修改
                 newStudent.setGrade("2026级"); // 临时默认值，后续在信息完善页面修改
                 newStudent.setPassword(SecurityUtils.encryptPassword(password));
