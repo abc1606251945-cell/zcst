@@ -153,6 +153,7 @@ export default {
         venueId: this.venueId,
         startTime,
         endTime,
+        pageNum: 1,
         pageSize: 1000
       }).then(response => {
         this.dutySchedules = response.rows;

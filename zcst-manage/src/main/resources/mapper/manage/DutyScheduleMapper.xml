@@ -35,11 +35,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="venueId != null">
                 and ds.venue_id = #{venueId}
             </if>
-            <if test="startTime != null">
-                and ds.start_time >= #{startTime}
+            <if test="startTime != null and endTime != null">
+                and ds.start_time <![CDATA[<]]> #{endTime}
+                and ds.end_time <![CDATA[>]]> #{startTime}
             </if>
-            <if test="endTime != null">
-                and ds.end_time &lt;= #{endTime}
+            <if test="startTime != null and endTime == null">
+                and ds.start_time <![CDATA[>=]]> #{startTime}
+            </if>
+            <if test="startTime == null and endTime != null">
+                and ds.end_time <![CDATA[<=]]> #{endTime}
             </if>
         </where>
     </select>

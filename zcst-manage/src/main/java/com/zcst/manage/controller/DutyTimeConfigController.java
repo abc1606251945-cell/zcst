@@ -225,9 +225,10 @@ public class DutyTimeConfigController extends BaseController
             if (userVenueId != null) {
                 for (Integer configId : configIds) {
                     DutyTimeConfig dutyTimeConfig = dutyTimeConfigService.selectDutyTimeConfigByConfigId(configId);
-                    if (dutyTimeConfig != null) {
-                        venueIds.add(dutyTimeConfig.getVenueId());
+                    if (dutyTimeConfig == null) {
+                        return AjaxResult.error("值班时间配置不存在");
                     }
+                    venueIds.add(dutyTimeConfig.getVenueId());
                     if (!userVenueId.equals(dutyTimeConfig.getVenueId())) {
                         return AjaxResult.error("无权限删除其他场馆的值班时间配置");
                     }

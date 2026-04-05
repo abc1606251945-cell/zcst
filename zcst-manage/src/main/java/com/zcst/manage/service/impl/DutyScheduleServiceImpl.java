@@ -211,8 +211,10 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
             }
             String sid = String.valueOf(sidObj);
             LocalDate dutyDate;
-            if (dateObj instanceof Date) {
-                dutyDate = ((Date) dateObj).toInstant().atZone(zoneId).toLocalDate();
+            if (dateObj instanceof java.sql.Date) {
+                dutyDate = ((java.sql.Date) dateObj).toLocalDate();
+            } else if (dateObj instanceof Date) {
+                dutyDate = java.time.Instant.ofEpochMilli(((Date) dateObj).getTime()).atZone(zoneId).toLocalDate();
             } else {
                 dutyDate = LocalDate.parse(String.valueOf(dateObj));
             }
@@ -324,6 +326,9 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
     @Transactional(rollbackFor = Exception.class)
     public boolean autoScheduleByConfig(Integer venueId, Date startDate, int weeks)
     {
+        if (venueId == null) {
+            throw new ServiceException("场馆不能为空");
+        }
         if (startDate == null) {
             throw new ServiceException("开始日期不能为空");
         }
@@ -336,24 +341,7 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
         calendar.add(Calendar.WEEK_OF_YEAR, weeks);
         calendar.add(Calendar.DAY_OF_MONTH, -1); // 包含开始日期，所以减1天
         Date endDate = calendar.getTime();
-
-        // 获取该场馆的值班时间配置
-        List<DutyTimeConfig> configs = dutyTimeConfigService.selectDutyTimeConfigByVenueId(venueId);
-        if (configs.isEmpty()) {
-            return false;
-        }
-
-        // 转换为TimeSlot列表
-        List<IDutyScheduleService.TimeSlot> timeSlots = new ArrayList<>();
-        for (DutyTimeConfig config : configs) {
-            IDutyScheduleService.TimeSlot slot = new IDutyScheduleService.TimeSlot();
-            slot.setStartTime(config.getStartTime());
-            slot.setEndTime(config.getEndTime());
-            timeSlots.add(slot);
-        }
-
-        // 执行自动排班
-        return autoSchedule(venueId, startDate, endDate, timeSlots);
+        return autoScheduleByConfig(venueId, startDate, endDate);
     }
 
     @Override

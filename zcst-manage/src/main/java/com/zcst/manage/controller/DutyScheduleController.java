@@ -478,7 +478,7 @@ public class DutyScheduleController extends BaseController
         query.setStartTime(range[0]);
         query.setEndTime(range[1]);
 
-        List<DutySchedule> list = dutyScheduleService.selectDutyScheduleList(query);
+        List<DutySchedule> list = new ArrayList<>(dutyScheduleService.selectDutyScheduleList(query));
         list.sort(Comparator.comparing(DutySchedule::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
         return success(list);
     }
@@ -510,7 +510,7 @@ public class DutyScheduleController extends BaseController
         query.setStartTime(range[0]);
         query.setEndTime(range[1]);
 
-        List<DutySchedule> list = dutyScheduleService.selectDutyScheduleList(query);
+        List<DutySchedule> list = new ArrayList<>(dutyScheduleService.selectDutyScheduleList(query));
         list.sort(Comparator.comparing(DutySchedule::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
         return success(list);
     }
