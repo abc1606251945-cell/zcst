@@ -44,11 +44,6 @@ public class FileUploadController extends BaseController {
             return AjaxResult.error("请选择要上传的文件");
         }
 
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            return AjaxResult.error("只能上传图片文件");
-        }
-
         if (file.getSize() > 10 * 1024 * 1024) {
             return AjaxResult.error("文件大小不能超过 10MB");
         }

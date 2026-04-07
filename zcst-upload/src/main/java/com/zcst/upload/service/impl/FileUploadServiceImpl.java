@@ -143,13 +143,13 @@ public class FileUploadServiceImpl implements FileUploadService {
         String extension = getExtension(originalFilename);
         String dateStr = LocalDate.now().format(FILE_DATE_FORMATTER);
         String timestamp = dateStr + String.format("%04d", sequence);
-
-        log.info("生成文件名：日期路径={}, 序号={}, 文件名={}", datePath, sequence, timestamp + "." + extension);
+        String filename = extension.isEmpty() ? timestamp : (timestamp + "." + extension);
+        log.info("生成文件名：日期路径={}, 序号={}, 文件名={}", datePath, sequence, filename);
 
         // 更新缓存
         updateCache(dateStr, sequence);
 
-        return timestamp + "." + extension;
+        return filename;
     }
 
     /**
@@ -285,8 +285,14 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
 
     private String getExtension(String filename) {
+        if (filename == null) {
+            return "";
+        }
         int lastDot = filename.lastIndexOf(".");
-        return lastDot > 0 ? filename.substring(lastDot + 1) : "";
+        if (lastDot <= 0 || lastDot >= filename.length() - 1) {
+            return "";
+        }
+        return filename.substring(lastDot + 1);
     }
 
     @Override

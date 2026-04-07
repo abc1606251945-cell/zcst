@@ -22,7 +22,7 @@
       <div class="el-upload__tip" slot="tip" v-if="showTip">
         请上传
         <template v-if="fileSize"> 大小不超过 <b style="color: #f56c6c">{{ fileSize }}MB</b> </template>
-        <template v-if="fileType"> 格式为 <b style="color: #f56c6c">{{ fileType.join("/") }}</b> </template>
+        <template v-if="fileType && fileType.length"> 格式为 <b style="color: #f56c6c">{{ fileType.join("/") }}</b> </template>
         的文件
       </div>
     </el-upload>
@@ -72,7 +72,7 @@ export default {
     // 文件类型, 例如['png', 'jpg', 'jpeg']
     fileType: {
       type: Array,
-      default: () => ["doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "pdf"]
+      default: () => null
     },
     // 是否显示提示
     isShowTip: {
@@ -151,10 +151,10 @@ export default {
     // 上传前校检格式和大小
     handleBeforeUpload(file) {
       // 校检文件类型
-      if (this.fileType) {
+      if (Array.isArray(this.fileType) && this.fileType.length > 0) {
         const fileName = file.name.split('.')
-        const fileExt = fileName[fileName.length - 1]
-        const isTypeOk = this.fileType.indexOf(fileExt) >= 0
+        const fileExt = String(fileName[fileName.length - 1] || '').toLowerCase()
+        const isTypeOk = this.fileType.map(t => String(t || '').toLowerCase()).indexOf(fileExt) >= 0
         if (!isTypeOk) {
           this.$modal.msgError(`文件格式不正确，请上传${this.fileType.join("/")}格式文件!`)
           return false

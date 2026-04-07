@@ -143,7 +143,9 @@ public class FileUploadUtils
      */
     public static final String extractFilename(MultipartFile file)
     {
-        return StringUtils.format("{}/{}_{}.{}", DateUtils.datePath(), FilenameUtils.getBaseName(file.getOriginalFilename()), Seq.getId(Seq.uploadSeqType), getExtension(file));
+        String extension = getExtension(file);
+        String filename = StringUtils.format("{}/{}_{}", DateUtils.datePath(), FilenameUtils.getBaseName(file.getOriginalFilename()), Seq.getId(Seq.uploadSeqType));
+        return extension.isEmpty() ? filename : (filename + "." + extension);
     }
 
     /**
@@ -151,7 +153,9 @@ public class FileUploadUtils
      */
     public static final String uuidFilename(MultipartFile file)
     {
-        return StringUtils.format("{}/{}.{}", DateUtils.datePath(), IdUtils.fastSimpleUUID(), getExtension(file));
+        String extension = getExtension(file);
+        String filename = StringUtils.format("{}/{}", DateUtils.datePath(), IdUtils.fastSimpleUUID());
+        return extension.isEmpty() ? filename : (filename + "." + extension);
     }
 
     public static final File getAbsoluteFile(String uploadDir, String fileName) throws IOException
@@ -253,7 +257,11 @@ public class FileUploadUtils
         String extension = FilenameUtils.getExtension(file.getOriginalFilename());
         if (StringUtils.isEmpty(extension))
         {
-            extension = MimeTypeUtils.getExtension(Objects.requireNonNull(file.getContentType()));
+            String contentType = file.getContentType();
+            if (!StringUtils.isEmpty(contentType))
+            {
+                extension = MimeTypeUtils.getExtension(contentType);
+            }
         }
         return extension;
     }
