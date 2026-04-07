@@ -183,18 +183,18 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
             studentDutyTimes.putIfAbsent(s.getStudentId(), 0L);
         }
 
-        ZoneId zoneId = ZoneId.systemDefault();
+        ZoneId zoneId = ZoneId.of("Asia/Shanghai");
         LocalDate startDay = startDate.toInstant().atZone(zoneId).toLocalDate();
         LocalDate endDay = endDate.toInstant().atZone(zoneId).toLocalDate();
 
-        Calendar rangeStartCal = Calendar.getInstance();
+        Calendar rangeStartCal = Calendar.getInstance(TimeZone.getTimeZone(zoneId));
         rangeStartCal.setTime(Date.from(startDay.minusDays(1).atStartOfDay(zoneId).toInstant()));
         rangeStartCal.set(Calendar.HOUR_OF_DAY, 0);
         rangeStartCal.set(Calendar.MINUTE, 0);
         rangeStartCal.set(Calendar.SECOND, 0);
         rangeStartCal.set(Calendar.MILLISECOND, 0);
 
-        Calendar rangeEndCal = Calendar.getInstance();
+        Calendar rangeEndCal = Calendar.getInstance(TimeZone.getTimeZone(zoneId));
         rangeEndCal.setTime(Date.from(endDay.atStartOfDay(zoneId).toInstant()));
         rangeEndCal.set(Calendar.HOUR_OF_DAY, 23);
         rangeEndCal.set(Calendar.MINUTE, 59);
@@ -336,7 +336,7 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
             throw new ServiceException("排班周数必须大于0");
         }
         // 计算结束日期
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"));
         calendar.setTime(startDate);
         calendar.add(Calendar.WEEK_OF_YEAR, weeks);
         calendar.add(Calendar.DAY_OF_MONTH, -1); // 包含开始日期，所以减1天

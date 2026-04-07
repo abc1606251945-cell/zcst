@@ -55,6 +55,7 @@ import java.util.List;
 public class DutyScheduleController extends BaseController
 {
     private static final Logger log = LoggerFactory.getLogger(DutyScheduleController.class);
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Shanghai");
 
     @Autowired
     private IDutyScheduleService dutyScheduleService;
@@ -143,29 +144,39 @@ public class DutyScheduleController extends BaseController
             }
             try {
                 LocalDateTime ldt = LocalDateTime.parse(v, DateTimeFormatter.ISO_DATE_TIME);
-                return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
+                return Date.from(ldt.atZone(ZONE_ID).toInstant());
             } catch (Exception ignored) {
             }
             String normalized = v.replace("T", " ").replace("Z", "");
             normalized = normalized.replaceAll("\\.\\d{3}$", "");
             return DateUtils.parseDate(normalized);
         }
+        try {
+            LocalDateTime ldt = LocalDateTime.parse(v, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            return Date.from(ldt.atZone(ZONE_ID).toInstant());
+        } catch (Exception ignored) {
+        }
+        try {
+            LocalDate ld = LocalDate.parse(v, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return Date.from(ld.atStartOfDay(ZONE_ID).toInstant());
+        } catch (Exception ignored) {
+        }
         return DateUtils.parseDate(v);
     }
 
     private LocalDate toLocalDate(Date date)
     {
-        return Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+        return Instant.ofEpochMilli(date.getTime()).atZone(ZONE_ID).toLocalDate();
     }
 
     private Date startOfDay(LocalDate date)
     {
-        return Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        return Date.from(date.atStartOfDay(ZONE_ID).toInstant());
     }
 
     private Date endOfDay(LocalDate date)
     {
-        return Date.from(date.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant());
+        return Date.from(date.atTime(23, 59, 59).atZone(ZONE_ID).toInstant());
     }
 
     private Date[] resolveRange(String from, String to, Integer days)
@@ -178,7 +189,7 @@ public class DutyScheduleController extends BaseController
         LocalDate end;
 
         if (fromDate == null && toDate == null) {
-            start = LocalDate.now();
+            start = LocalDate.now(ZONE_ID);
             end = start.plusDays(d - 1L);
         } else if (fromDate != null && toDate == null) {
             start = toLocalDate(fromDate);
