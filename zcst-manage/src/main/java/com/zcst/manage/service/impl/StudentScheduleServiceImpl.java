@@ -5,6 +5,7 @@ import com.zcst.manage.mapper.StudentScheduleMapper;
 import com.zcst.manage.service.IStudentScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -80,5 +81,17 @@ public class StudentScheduleServiceImpl implements IStudentScheduleService
     {
         List<StudentSchedule> schedules = selectStudentScheduleByTimeRange(studentId, startTime, endTime);
         return !schedules.isEmpty();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int replaceStudentSchedule(String studentId, List<StudentSchedule> schedules)
+    {
+        studentScheduleMapper.deleteStudentScheduleByStudentId(studentId);
+        if (schedules == null || schedules.isEmpty())
+        {
+            return 0;
+        }
+        return studentScheduleMapper.batchInsertStudentSchedule(schedules);
     }
 }

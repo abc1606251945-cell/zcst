@@ -79,7 +79,7 @@ spring:
     # redis 配置
     redis:
       # 地址
-      host: redis
+      host: localhost
       # 端口，默认为6379
       port: 6379
       # 数据库索引
@@ -168,3 +168,9 @@ dromara:
         bucket-name: zcsst-student-timetable
         domain: https://zcsst-student-timetable.oss-cn-beijing.aliyuncs.com/
         base-path: timetable/
+
+python:
+  file-analysis:
+    base-url: http://127.0.0.1:8000
+    submit-path: /api/v1/file-analysis/submit
+    timeout-seconds: 10

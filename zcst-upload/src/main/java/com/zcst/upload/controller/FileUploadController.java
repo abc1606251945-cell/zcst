@@ -5,9 +5,13 @@ import com.zcst.common.core.controller.BaseController;
 import com.zcst.common.core.domain.AjaxResult;
 import com.zcst.common.utils.SecurityUtils;
 import com.zcst.upload.service.FileUploadService;
+import com.zcst.upload.service.PythonFileAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 文件上传控制器
@@ -18,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileUploadController extends BaseController {
 
     private final FileUploadService fileUploadService;
+    private final PythonFileAnalysisService pythonFileAnalysisService;
 
     /**
      * 上传课表照片
@@ -73,6 +78,24 @@ public class FileUploadController extends BaseController {
         try {
             String url = fileUploadService.uploadFile(file, "uploads/");
             return AjaxResult.success("上传成功", url);
+        } catch (Exception e) {
+            return AjaxResult.error("上传失败：" + e.getMessage());
+        }
+    }
+
+    @Anonymous
+    @PostMapping("/file/analyze")
+    public AjaxResult uploadFileAndAnalyze(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return AjaxResult.error("请选择要上传的文件");
+        }
+
+        try {
+            String url = fileUploadService.uploadFile(file, "uploads/");
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("ossUrl", url);
+            data.put("analysis", pythonFileAnalysisService.submit(url, file.getOriginalFilename(), file.getContentType(), file.getSize()));
+            return AjaxResult.success("上传成功", data);
         } catch (Exception e) {
             return AjaxResult.error("上传失败：" + e.getMessage());
         }

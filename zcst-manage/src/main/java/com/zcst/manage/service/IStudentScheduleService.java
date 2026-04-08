@@ -88,4 +88,6 @@ public interface IStudentScheduleService
      * @return 是否有课
      */
     public boolean hasClass(String studentId, Date startTime, Date endTime);
+
+    public int replaceStudentSchedule(String studentId, List<StudentSchedule> schedules);
 }

@@ -84,4 +84,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{scheduleId}
         </foreach>
     </delete>
+
+    <delete id="deleteStudentScheduleByStudentId" parameterType="string">
+        delete from student_schedule
+        where student_id = #{studentId}
+    </delete>
+
+    <insert id="batchInsertStudentSchedule" parameterType="java.util.List">
+        insert into student_schedule (student_id, course_name, location, start_time, end_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.studentId}, #{item.courseName}, #{item.location}, #{item.startTime}, #{item.endTime})
+        </foreach>
+    </insert>
 </mapper>

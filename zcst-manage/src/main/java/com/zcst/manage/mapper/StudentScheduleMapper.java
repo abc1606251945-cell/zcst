@@ -76,4 +76,8 @@ public interface StudentScheduleMapper
      * @return 结果
      */
     public int deleteStudentScheduleByScheduleIds(Integer[] scheduleIds);
+
+    public int deleteStudentScheduleByStudentId(String studentId);
+
+    public int batchInsertStudentSchedule(List<StudentSchedule> list);
 }
