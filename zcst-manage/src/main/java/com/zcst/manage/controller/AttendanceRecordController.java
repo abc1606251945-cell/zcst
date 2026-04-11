@@ -4,13 +4,18 @@ import com.zcst.common.core.controller.BaseController;
 import com.zcst.common.core.domain.AjaxResult;
 import com.zcst.common.core.domain.entity.SysUser;
 import com.zcst.common.core.page.TableDataInfo;
+import com.zcst.common.constant.HttpStatus;
+import com.zcst.common.exception.ServiceException;
 import com.zcst.common.utils.SecurityUtils;
 import com.zcst.manage.domain.AttendanceRecord;
+import com.zcst.manage.domain.DutySchedule;
 import com.zcst.manage.domain.Vo.AttendanceRecordVo;
+import com.zcst.manage.mapper.DutyScheduleMapper;
 import com.zcst.manage.service.IAttendanceRecordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,6 +39,9 @@ public class AttendanceRecordController extends BaseController {
     @Autowired
     private IAttendanceRecordService attendanceRecordService;
 
+    @Autowired
+    private DutyScheduleMapper dutyScheduleMapper;
+
     /**
      * 查询考勤记录列表
      * 支持按学生 ID、值班 ID、状态等条件查询
@@ -48,30 +56,33 @@ public class AttendanceRecordController extends BaseController {
     public TableDataInfo list(AttendanceRecord attendanceRecord) {
         // 获取当前登录用户信息
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null)
+        {
+            throw new ServiceException("未登录或用户信息不存在", HttpStatus.UNAUTHORIZED);
+        }
         String username = currentUser.getUserName();
+        boolean isStudent = "student".equalsIgnoreCase(currentUser.getAccountType());
         
-        // 根据用户角色设置过滤条件
-        // 值班员（common 角色）只显示自己的考勤信息
-        if (currentUser.getRoles().stream().anyMatch(role -> "common".equals(role.getRoleKey()))) {
+        if (isStudent)
+        {
+            if (attendanceRecord.getStudentId() != null && !attendanceRecord.getStudentId().isEmpty()
+                && !attendanceRecord.getStudentId().equals(username))
+            {
+                log.warn("学生越权尝试查询他人考勤列表, userId={}, username={}, requestStudentId={}",
+                    currentUser.getUserId(), username, attendanceRecord.getStudentId());
+            }
             attendanceRecord.setStudentId(username);
         }
-        // 场馆管理员只显示对应场馆的考勤信息
-        else if (currentUser.getRoles().stream().anyMatch(role -> 
-            role.getRoleKey().contains("siqi") || 
-            role.getRoleKey().contains("hongyi") || 
-            role.getRoleKey().contains("xinyuan") || 
-            role.getRoleKey().contains("duxue") || 
-            role.getRoleKey().contains("zhixing") || 
-            role.getRoleKey().contains("guofang"))) {
-            // 从角色的 venue_id 字段获取场馆 ID
-            Integer venueId = currentUser.getRoles().stream()
+        else if (!currentUser.isAdmin())
+        {
+            Integer venueId = currentUser.getRoles() == null ? null : currentUser.getRoles().stream()
                 .filter(role -> role.getVenueId() != null)
                 .findFirst()
                 .map(role -> role.getVenueId())
                 .orElse(null);
-            if (venueId != null) {
+            if (venueId != null)
+            {
                 attendanceRecord.setVenueId(venueId);
-                log.info("场馆管理员查询考勤记录，venueId: {}", venueId);
             }
         }
         
@@ -90,7 +101,42 @@ public class AttendanceRecordController extends BaseController {
      */
     @GetMapping("/info/{recordId}")
     public AjaxResult getInfo(@PathVariable("recordId") Long recordId) {
-        return success(attendanceRecordService.selectAttendanceRecordById(recordId));
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null)
+        {
+            throw new ServiceException("未登录或用户信息不存在", HttpStatus.UNAUTHORIZED);
+        }
+        AttendanceRecord record = attendanceRecordService.selectAttendanceRecordById(recordId);
+        if (record == null)
+        {
+            return error("记录不存在");
+        }
+        boolean isStudent = "student".equalsIgnoreCase(currentUser.getAccountType());
+        if (isStudent)
+        {
+            String username = currentUser.getUserName();
+            if (record.getStudentId() == null || !record.getStudentId().equals(username))
+            {
+                throw new ServiceException("无权限查看该数据", HttpStatus.FORBIDDEN);
+            }
+        }
+        else if (!currentUser.isAdmin())
+        {
+            Integer venueId = currentUser.getRoles() == null ? null : currentUser.getRoles().stream()
+                .filter(role -> role.getVenueId() != null)
+                .findFirst()
+                .map(role -> role.getVenueId())
+                .orElse(null);
+            if (venueId != null && record.getDutyId() != null)
+            {
+                DutySchedule duty = dutyScheduleMapper.selectDutyScheduleByDutyId(record.getDutyId());
+                if (duty != null && duty.getVenueId() != null && !venueId.equals(duty.getVenueId()))
+                {
+                    throw new ServiceException("无权限查看该数据", HttpStatus.FORBIDDEN);
+                }
+            }
+        }
+        return success(record);
     }
 
     /**
@@ -101,6 +147,15 @@ public class AttendanceRecordController extends BaseController {
      */
     @PostMapping
     public AjaxResult add(@RequestBody AttendanceRecord attendanceRecord) {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null)
+        {
+            throw new ServiceException("未登录或用户信息不存在", HttpStatus.UNAUTHORIZED);
+        }
+        if ("student".equalsIgnoreCase(currentUser.getAccountType()))
+        {
+            throw new ServiceException("无权限操作该数据", HttpStatus.FORBIDDEN);
+        }
         return toAjax(attendanceRecordService.insertAttendanceRecord(attendanceRecord));
     }
 
@@ -112,6 +167,15 @@ public class AttendanceRecordController extends BaseController {
      */
     @PutMapping
     public AjaxResult edit(@RequestBody AttendanceRecord attendanceRecord) {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null)
+        {
+            throw new ServiceException("未登录或用户信息不存在", HttpStatus.UNAUTHORIZED);
+        }
+        if ("student".equalsIgnoreCase(currentUser.getAccountType()))
+        {
+            throw new ServiceException("无权限操作该数据", HttpStatus.FORBIDDEN);
+        }
         return toAjax(attendanceRecordService.updateAttendanceRecord(attendanceRecord));
     }
 
@@ -124,6 +188,15 @@ public class AttendanceRecordController extends BaseController {
      */
     @DeleteMapping("/{recordIds}")
     public AjaxResult remove(@PathVariable Long[] recordIds) {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null)
+        {
+            throw new ServiceException("未登录或用户信息不存在", HttpStatus.UNAUTHORIZED);
+        }
+        if ("student".equalsIgnoreCase(currentUser.getAccountType()))
+        {
+            throw new ServiceException("无权限操作该数据", HttpStatus.FORBIDDEN);
+        }
         return toAjax(attendanceRecordService.deleteAttendanceRecordByIds(recordIds));
     }
 
@@ -131,46 +204,91 @@ public class AttendanceRecordController extends BaseController {
      * 打卡接口
      * 学生到达场馆后进行打卡，系统自动判断是否迟到
      * 
-     * @param studentId 学号
+     * 说明：
+     * - studentId 参数仅为兼容，后端实际以当前登录用户为准（不信任前端传入）
+     *
+     * @param studentId 学号（兼容参数，实际忽略）
      * @param dutyId 值班 ID
      * @return 打卡结果
      */
     @PostMapping("/checkIn")
-    public AjaxResult checkIn(@RequestParam String studentId, @RequestParam Integer dutyId) {
-        // 参数校验
-        if (studentId == null || studentId.isEmpty() || dutyId == null) {
-            return error("参数错误：学号和值班 ID 不能为空");
+    @PreAuthorize("@ss.hasPermi('manage:attendance:student')")
+    public AjaxResult checkIn(@RequestParam(value = "studentId", required = false) String studentId, @RequestParam Integer dutyId) {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null)
+        {
+            throw new ServiceException("未登录或用户信息不存在", HttpStatus.UNAUTHORIZED);
         }
-        
-        int result = attendanceRecordService.checkIn(studentId, dutyId);
-        if (result > 0) {
-            return success("打卡成功");
-        } else {
-            return error("打卡失败，可能已经打卡或值班信息不存在");
+        String currentStudentId = currentUser.getUserName();
+        if (!"student".equalsIgnoreCase(currentUser.getAccountType()))
+        {
+            throw new ServiceException("无权限操作该接口", HttpStatus.FORBIDDEN);
         }
+        if (currentStudentId == null || currentStudentId.isEmpty()) {
+            throw new ServiceException("无法获取用户学号", HttpStatus.BAD_REQUEST);
+        }
+        if (studentId != null && !studentId.isEmpty() && !studentId.equals(currentStudentId))
+        {
+            log.warn("学生越权尝试 checkIn, userId={}, username={}, requestStudentId={}",
+                currentUser.getUserId(), currentStudentId, studentId);
+        }
+        if (dutyId == null) {
+            throw new ServiceException("参数错误：值班 ID 不能为空", HttpStatus.BAD_REQUEST);
+        }
+
+        attendanceRecordService.checkIn(currentStudentId, dutyId);
+        return success("打卡成功");
     }
 
     /**
      * 签退接口
      * 学生值班结束后进行签退，系统自动计算值班时长并判断是否早退
      * 
-     * @param recordId 考勤记录 ID
+     * 说明：
+     * - 学生端只需要传 dutyId：后端会用（当前登录学生 + dutyId）定位未签退记录并完成签退
+     * - 管理端/非学生角色仍可传 recordId + dutyId 进行签退（兼容历史调用）
+     *
+     * @param recordId 考勤记录 ID（管理端兼容参数；学生端可不传）
      * @param dutyId 值班 ID
      * @return 签退结果
      */
     @PostMapping("/checkOut")
-    public AjaxResult checkOut(@RequestParam Long recordId, @RequestParam Integer dutyId) {
-        // 参数校验
-        if (recordId == null || dutyId == null) {
-            return error("参数错误：考勤记录 ID 和值班 ID 不能为空");
+    @PreAuthorize("@ss.hasPermi('manage:attendance:student')")
+    public AjaxResult checkOut(
+        @RequestParam(value = "recordId", required = false) Long recordId,
+        @RequestParam(value = "dutyId", required = false) Integer dutyId,
+        @RequestParam(value = "studentId", required = false) String studentId
+    ) {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null)
+        {
+            throw new ServiceException("未登录或用户信息不存在", HttpStatus.UNAUTHORIZED);
         }
-        
-        int result = attendanceRecordService.checkOut(recordId, dutyId);
-        if (result > 0) {
+        String currentStudentId = currentUser.getUserName();
+        if (!"student".equalsIgnoreCase(currentUser.getAccountType()))
+        {
+            throw new ServiceException("无权限操作该接口", HttpStatus.FORBIDDEN);
+        }
+        if (currentStudentId == null || currentStudentId.isEmpty()) {
+            throw new ServiceException("无法获取用户学号", HttpStatus.BAD_REQUEST);
+        }
+        if (studentId != null && !studentId.isEmpty() && !studentId.equals(currentStudentId))
+        {
+            log.warn("学生越权尝试 checkOut, userId={}, username={}, requestStudentId={}",
+                currentUser.getUserId(), currentStudentId, studentId);
+        }
+
+        if (recordId != null)
+        {
+            attendanceRecordService.checkOutByRecordId(currentStudentId, recordId);
             return success("签退成功");
-        } else {
-            return error("签退失败，考勤记录不存在");
         }
+        if (dutyId == null)
+        {
+            throw new ServiceException("参数错误：recordId 或 dutyId 至少传一个", HttpStatus.BAD_REQUEST);
+        }
+        attendanceRecordService.checkOutByDuty(currentStudentId, dutyId);
+        return success("签退成功");
     }
 
     /**
@@ -182,8 +300,28 @@ public class AttendanceRecordController extends BaseController {
      * @return 考勤记录列表
      */
     @GetMapping("/student/month")
-    public AjaxResult getStudentAttendanceByMonth(@RequestParam String studentId, @RequestParam String yearMonth) {
-        List<AttendanceRecordVo> records = attendanceRecordService.selectAttendanceRecordVoByStudentIdAndMonth(studentId, yearMonth);
+    @PreAuthorize("@ss.hasPermi('manage:attendance:student')")
+    public AjaxResult getStudentAttendanceByMonth(@RequestParam(value = "studentId", required = false) String studentId, @RequestParam String yearMonth) {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null)
+        {
+            throw new ServiceException("未登录或用户信息不存在", HttpStatus.UNAUTHORIZED);
+        }
+        if (!"student".equalsIgnoreCase(currentUser.getAccountType()))
+        {
+            throw new ServiceException("无权限查看该数据", HttpStatus.FORBIDDEN);
+        }
+        String currentStudentId = currentUser.getUserName();
+        if (currentStudentId == null || currentStudentId.isEmpty())
+        {
+            throw new ServiceException("无法获取用户学号", HttpStatus.BAD_REQUEST);
+        }
+        if (studentId != null && !studentId.isEmpty() && !studentId.equals(currentStudentId))
+        {
+            log.warn("学生越权尝试查询他人 monthAttendance, userId={}, username={}, requestStudentId={}",
+                currentUser.getUserId(), currentStudentId, studentId);
+        }
+        List<AttendanceRecordVo> records = attendanceRecordService.selectAttendanceRecordVoByStudentIdAndMonth(currentStudentId, yearMonth);
         return success(records);
     }
 }

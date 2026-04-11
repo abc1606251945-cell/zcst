@@ -58,6 +58,14 @@ public class SysPermissionService
     public Set<String> getMenuPermission(SysUser user)
     {
         Set<String> perms = new HashSet<String>();
+        if ("student".equalsIgnoreCase(user.getAccountType()))
+        {
+            perms.add("manage:dutySchedule:studentWeek");
+            perms.add("manage:dutyApplication:student");
+            perms.add("manage:studentNotice:student");
+            perms.add("manage:attendance:student");
+            return perms;
+        }
         // 管理员拥有所有权限
         if (user.isAdmin())
         {

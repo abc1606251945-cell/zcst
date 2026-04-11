@@ -1,6 +1,11 @@
 package com.zcst.manage.mapper;
 
+import com.zcst.manage.domain.Vo.DutyApplicationVo;
+import com.zcst.manage.domain.LeaveApplication;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * 请假申请 Mapper 接口
@@ -19,4 +24,19 @@ public interface LeaveApplicationMapper {
      * @return 请假次数
      */
     int countByStudentIdAndMonth(@Param("studentId") String studentId, @Param("yearMonth") String yearMonth);
+
+    int insertLeaveApplication(LeaveApplication leaveApplication);
+
+    LeaveApplication selectLeaveApplicationById(@Param("leaveId") Integer leaveId);
+
+    List<DutyApplicationVo> selectMyLeaveApplications(@Param("studentId") String studentId, @Param("status") String status);
+
+    DutyApplicationVo selectLeaveApplicationDetail(@Param("leaveId") Integer leaveId, @Param("studentId") String studentId);
+
+    int cancelLeaveApplication(
+        @Param("leaveId") Integer leaveId,
+        @Param("studentId") String studentId,
+        @Param("cancelTime") Date cancelTime,
+        @Param("cancelReason") String cancelReason
+    );
 }

@@ -157,4 +157,12 @@ public class ShiftExchange extends BaseEntity {
      * 记录替换人 B 确认的时间
      */
     private Date studentBConfirmTime;
+
+    private Date cancelTime;
+
+    private String cancelReason;
+
+    private Date createdAt;
+
+    private Date updatedAt;
 }

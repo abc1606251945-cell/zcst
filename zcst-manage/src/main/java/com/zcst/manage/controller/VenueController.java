@@ -106,6 +106,12 @@ public class VenueController extends BaseController
         return success(result);
     }
 
+    @GetMapping("/simple")
+    public AjaxResult simple()
+    {
+        return simpleList();
+    }
+
     /**
      * 导出场馆信息管理列表
      */

@@ -39,27 +39,40 @@ public class UserDetailsServiceImpl implements UserDetailsService
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException
     {
-        // 首先尝试从管理员表查询
+        // 首先尝试从 sys_user 查询
         SysUser user = userService.selectUserByUserName(username);
         boolean isStudent = false;
+        Object student = null;
         
-        // 如果管理员表中不存在，尝试从学生表查询
-        if (StringUtils.isNull(user))
+        if (StringUtils.isNotNull(user))
         {
-            try {
-                // 使用SpringUtils动态获取StudentMapper实例，避免循环依赖
-                Object studentMapper = SpringUtils.getBean("studentMapper");
-                if (studentMapper != null) {
-                    // 反射调用selectStudentByStudentId方法
-                    Object student = studentMapper.getClass().getMethod("selectStudentByStudentId", String.class).invoke(studentMapper, username);
-                    if (student != null) {
-                        // 反射获取学生信息并转换为SysUser对象
-                        user = convertStudentToSysUser(student);
-                        isStudent = true;
+            if (user.getRoles() != null && !user.getRoles().isEmpty())
+            {
+                isStudent = user.getRoles().stream().allMatch(r -> "student".equals(r.getRoleKey()));
+            }
+            if (isStudent)
+            {
+                student = loadStudent(username);
+                if (student != null) {
+                    try {
+                        Long venueId = (Long) student.getClass().getMethod("getVenueId").invoke(student);
+                        if (venueId != null) {
+                            user.setVenueId(venueId);
+                        }
+                    } catch (Exception e) {
+                        log.error("填充学生场馆信息失败: {}", e.getMessage());
                     }
                 }
-            } catch (Exception e) {
-                log.error("查询学生信息失败: {}", e.getMessage());
+            }
+        }
+
+        // 如果 sys_user 中不存在，尝试从 student 表查询
+        if (StringUtils.isNull(user))
+        {
+            student = loadStudent(username);
+            if (student != null) {
+                user = convertStudentToSysUser(student);
+                isStudent = true;
             }
             
             if (StringUtils.isNull(user))
@@ -79,6 +92,8 @@ public class UserDetailsServiceImpl implements UserDetailsService
             throw new ServiceException(MessageUtils.message("user.blocked"));
         }
 
+        user.setAccountType(isStudent ? "student" : "admin");
+
         // 对于学生，先检查密码是否需要加密
         if (isStudent && !user.getPassword().startsWith("$2a$"))
         {
@@ -89,6 +104,20 @@ public class UserDetailsServiceImpl implements UserDetailsService
         passwordService.validate(user);
 
         return createLoginUser(user);
+    }
+
+    private Object loadStudent(String studentId)
+    {
+        try {
+            Object studentMapper = SpringUtils.getBean("studentMapper");
+            if (studentMapper == null) {
+                return null;
+            }
+            return studentMapper.getClass().getMethod("selectStudentByStudentId", String.class).invoke(studentMapper, studentId);
+        } catch (Exception e) {
+            log.error("查询学生信息失败: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -116,6 +145,7 @@ public class UserDetailsServiceImpl implements UserDetailsService
             user.setSex(gender);
             user.setPhonenumber(phone);
             user.setVenueId(venueId);
+            user.setAccountType("student");
             user.setStatus("0"); // 正常状态
             user.setDelFlag("0"); // 未删除
             user.setDeptId(1L); // 默认部门

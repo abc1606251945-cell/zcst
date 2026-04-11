@@ -5,6 +5,7 @@ import com.zcst.manage.domain.DutySchedule;
 import com.zcst.manage.domain.DutyTimeConfig;
 import com.zcst.manage.domain.Student;
 import com.zcst.manage.domain.Vo.AvailableStudentVo;
+import com.zcst.manage.domain.Vo.DutyScheduleVo;
 import com.zcst.manage.mapper.DutyScheduleMapper;
 import com.zcst.manage.mapper.StudentMapper;
 import com.zcst.manage.service.IDutyScheduleService;
@@ -389,5 +390,11 @@ public class DutyScheduleServiceImpl implements IDutyScheduleService
             currentTime = new Date();
         }
         return dutyScheduleMapper.selectCurrentAvailableDuty(studentId, currentTime);
+    }
+
+    @Override
+    public List<DutyScheduleVo> selectStudentWeekDuty(String studentId, Integer venueId, Date startTime, Date endTime)
+    {
+        return dutyScheduleMapper.selectStudentWeekDuty(studentId, venueId, startTime, endTime);
     }
 }

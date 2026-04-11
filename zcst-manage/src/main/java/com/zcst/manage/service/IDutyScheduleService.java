@@ -2,6 +2,7 @@ package com.zcst.manage.service;
 
 import com.zcst.manage.domain.DutySchedule;
 import com.zcst.manage.domain.Vo.AvailableStudentVo;
+import com.zcst.manage.domain.Vo.DutyScheduleVo;
 
 import java.util.List;
 import java.util.Date;
@@ -119,6 +120,8 @@ public interface IDutyScheduleService
      * @return 可签到的值班信息列表
      */
     public List<DutySchedule> selectCurrentAvailableDuty(String studentId, Date currentTime);
+
+    public List<DutyScheduleVo> selectStudentWeekDuty(String studentId, Integer venueId, Date startTime, Date endTime);
 
     /**
      * 时间段配置类

@@ -1,5 +1,7 @@
 package com.zcst.manage.service.impl;
 
+import com.zcst.common.constant.HttpStatus;
+import com.zcst.common.exception.ServiceException;
 import com.zcst.manage.constant.AttendanceStatusEnum;
 import com.zcst.manage.domain.AttendanceRecord;
 import com.zcst.manage.domain.DutySchedule;
@@ -177,50 +179,38 @@ public class AttendanceRecordServiceImpl implements IAttendanceRecordService {
     @Transactional
     @Override
     public int checkIn(String studentId, Integer dutyId) {
-        try {
-            // 查询值班信息
-            DutySchedule dutySchedule = dutyScheduleMapper.selectDutyScheduleByDutyId(dutyId);
-            if (dutySchedule == null) {
-                log.warn("值班信息不存在，dutyId: {}", dutyId);
-                return 0;
-            }
-
-            // 检查是否已经打卡
-            AttendanceRecord existingRecord = attendanceRecordMapper.selectAttendanceRecordByDutyId(dutyId);
-            if (existingRecord != null) {
-                log.warn("该值班已打卡，dutyId: {}", dutyId);
-                return 0;
-            }
-
-            // 创建考勤记录
-            AttendanceRecord attendanceRecord = new AttendanceRecord();
-            attendanceRecord.setStudentId(studentId);
-            attendanceRecord.setDutyId(dutyId);
-            Date checkInTime = new Date();
-            attendanceRecord.setCheckInTime(checkInTime);
-
-            // 判断打卡状态（使用打卡时间判断）
-            if (checkInTime.before(dutySchedule.getStartTime())) {
-                attendanceRecord.setStatus(AttendanceStatusEnum.NORMAL); // 正常
-            } else {
-                attendanceRecord.setStatus(AttendanceStatusEnum.LATE); // 迟到
-            }
-
-            // 保存考勤记录
-            int result = attendanceRecordMapper.insertAttendanceRecord(attendanceRecord);
-
-            // 更新值班表的考勤状态
-            if (result > 0) {
-                dutySchedule.setAttendanceStatus(attendanceRecord.getStatus());
-                dutyScheduleMapper.updateDutySchedule(dutySchedule);
-                log.info("打卡成功，studentId: {}, dutyId: {}, status: {}", studentId, dutyId, attendanceRecord.getStatus());
-            }
-
-            return result;
-        } catch (Exception e) {
-            log.error("打卡失败，studentId: {}, dutyId: {}", studentId, dutyId, e);
-            throw new RuntimeException("打卡失败：" + e.getMessage(), e);
+        DutySchedule dutySchedule = dutyScheduleMapper.selectDutyScheduleByDutyId(dutyId);
+        if (dutySchedule == null) {
+            throw new ServiceException("参数错误：值班信息不存在", HttpStatus.BAD_REQUEST);
         }
+        if (dutySchedule.getStudentId() == null || !dutySchedule.getStudentId().equals(studentId)) {
+            throw new ServiceException("无权限操作该值班", HttpStatus.FORBIDDEN);
+        }
+
+        AttendanceRecord existingRecord = attendanceRecordMapper.selectAttendanceRecordByDutyId(dutyId);
+        if (existingRecord != null) {
+            throw new ServiceException("已打卡，不能重复打卡", HttpStatus.CONFLICT);
+        }
+
+        AttendanceRecord attendanceRecord = new AttendanceRecord();
+        attendanceRecord.setStudentId(studentId);
+        attendanceRecord.setDutyId(dutyId);
+        Date checkInTime = new Date();
+        attendanceRecord.setCheckInTime(checkInTime);
+
+        if (checkInTime.before(dutySchedule.getStartTime())) {
+            attendanceRecord.setStatus(AttendanceStatusEnum.NORMAL);
+        } else {
+            attendanceRecord.setStatus(AttendanceStatusEnum.LATE);
+        }
+
+        int result = attendanceRecordMapper.insertAttendanceRecord(attendanceRecord);
+        if (result > 0) {
+            dutySchedule.setAttendanceStatus(attendanceRecord.getStatus());
+            dutyScheduleMapper.updateDutySchedule(dutySchedule);
+        }
+
+        return result;
     }
 
     /**
@@ -242,67 +232,91 @@ public class AttendanceRecordServiceImpl implements IAttendanceRecordService {
     @Transactional
     @Override
     public int checkOut(Long recordId, Integer dutyId) {
-        try {
-            // 查询考勤记录
-            AttendanceRecord attendanceRecord = attendanceRecordMapper.selectAttendanceRecordById(recordId);
-            if (attendanceRecord == null) {
-                log.warn("考勤记录不存在，recordId: {}", recordId);
-                return 0;
-            }
-
-            // 检查是否已经签退
-            if (attendanceRecord.getCheckOutTime() != null) {
-                log.warn("该考勤记录已签退，recordId: {}", recordId);
-                return 0;
-            }
-
-            // 查询值班信息
-            DutySchedule dutySchedule = dutyScheduleMapper.selectDutyScheduleByDutyId(dutyId);
-            if (dutySchedule == null) {
-                log.warn("值班信息不存在，dutyId: {}", dutyId);
-                return 0;
-            }
-
-            // 设置签退时间和计算时长
-            Date checkOutTime = new Date();
-            attendanceRecord.setCheckOutTime(checkOutTime);
-            
-            // 计算实际值班时长（小时），使用 BigDecimal 精确计算
-            long durationMillis = checkOutTime.getTime() - attendanceRecord.getCheckInTime().getTime();
-            BigDecimal actualHours = new BigDecimal(durationMillis)
-                .divide(new BigDecimal(1000 * 60 * 60), 2, BigDecimal.ROUND_HALF_UP);
-            attendanceRecord.setActualDutyHours(actualHours.doubleValue());
-
-            // 判断是否早退
-            if (checkOutTime.before(dutySchedule.getEndTime())) {
-                // 早退，更新状态为 2
-                attendanceRecord.setStatus(AttendanceStatusEnum.EARLY_LEAVE);
-                log.info("早退，recordId: {}, studentId: {}", recordId, attendanceRecord.getStudentId());
-            } else {
-                // 正常签退，保持原状态或更新为 0
-                if (AttendanceStatusEnum.LATE.equals(attendanceRecord.getStatus())) {
-                    // 如果打卡时迟到，保持迟到状态
-                    attendanceRecord.setStatus(AttendanceStatusEnum.LATE);
-                } else {
-                    attendanceRecord.setStatus(AttendanceStatusEnum.NORMAL);
-                }
-            }
-
-            // 更新考勤记录
-            int result = attendanceRecordMapper.updateAttendanceRecord(attendanceRecord);
-
-            // 更新值班表的考勤状态
-            if (result > 0) {
-                dutySchedule.setAttendanceStatus(attendanceRecord.getStatus());
-                dutyScheduleMapper.updateDutySchedule(dutySchedule);
-                log.info("签退成功，recordId: {}, studentId: {}, status: {}", recordId, attendanceRecord.getStudentId(), attendanceRecord.getStatus());
-            }
-
-            return result;
-        } catch (Exception e) {
-            log.error("签退失败，recordId: {}, dutyId: {}", recordId, dutyId, e);
-            throw new RuntimeException("签退失败：" + e.getMessage(), e);
+        AttendanceRecord attendanceRecord = attendanceRecordMapper.selectAttendanceRecordById(recordId);
+        if (attendanceRecord == null) {
+            throw new ServiceException("参数错误：考勤记录不存在", HttpStatus.BAD_REQUEST);
         }
+        if (attendanceRecord.getCheckOutTime() != null) {
+            throw new ServiceException("已签退，不能重复签退", HttpStatus.CONFLICT);
+        }
+        if (attendanceRecord.getCheckInTime() == null) {
+            throw new ServiceException("业务冲突：未打卡不能签退", HttpStatus.CONFLICT);
+        }
+
+        Integer recordDutyId = attendanceRecord.getDutyId();
+        if (dutyId == null)
+        {
+            dutyId = recordDutyId;
+        }
+        if (recordDutyId != null && dutyId != null && !recordDutyId.equals(dutyId))
+        {
+            throw new ServiceException("参数错误：recordId 与 dutyId 不匹配", HttpStatus.BAD_REQUEST);
+        }
+
+        DutySchedule dutySchedule = dutyScheduleMapper.selectDutyScheduleByDutyId(dutyId);
+        if (dutySchedule == null) {
+            throw new ServiceException("参数错误：值班信息不存在", HttpStatus.BAD_REQUEST);
+        }
+        if (dutySchedule.getStudentId() != null && attendanceRecord.getStudentId() != null
+            && !dutySchedule.getStudentId().equals(attendanceRecord.getStudentId()))
+        {
+            throw new ServiceException("参数错误：考勤记录与值班归属不一致", HttpStatus.BAD_REQUEST);
+        }
+
+        Date checkOutTime = new Date();
+        attendanceRecord.setCheckOutTime(checkOutTime);
+
+        long durationMillis = checkOutTime.getTime() - attendanceRecord.getCheckInTime().getTime();
+        BigDecimal actualHours = new BigDecimal(durationMillis)
+            .divide(new BigDecimal(1000 * 60 * 60), 2, BigDecimal.ROUND_HALF_UP);
+        attendanceRecord.setActualDutyHours(actualHours.doubleValue());
+
+        if (checkOutTime.before(dutySchedule.getEndTime())) {
+            attendanceRecord.setStatus(AttendanceStatusEnum.EARLY_LEAVE);
+        } else {
+            if (AttendanceStatusEnum.LATE.equals(attendanceRecord.getStatus())) {
+                attendanceRecord.setStatus(AttendanceStatusEnum.LATE);
+            } else {
+                attendanceRecord.setStatus(AttendanceStatusEnum.NORMAL);
+            }
+        }
+
+        int result = attendanceRecordMapper.updateAttendanceRecord(attendanceRecord);
+        if (result > 0) {
+            dutySchedule.setAttendanceStatus(attendanceRecord.getStatus());
+            dutyScheduleMapper.updateDutySchedule(dutySchedule);
+        }
+
+        return result;
+    }
+
+    @Override
+    public int checkOutByDuty(String studentId, Integer dutyId)
+    {
+        AttendanceRecord record = attendanceRecordMapper.selectUnCheckedOutRecordByStudentAndDuty(studentId, dutyId);
+        if (record == null || record.getRecordId() == null) {
+            throw new ServiceException("当前无可签退记录", HttpStatus.CONFLICT);
+        }
+        return checkOut(record.getRecordId(), dutyId);
+    }
+
+    @Override
+    public int checkOutByRecordId(String studentId, Long recordId)
+    {
+        AttendanceRecord record = attendanceRecordMapper.selectAttendanceRecordById(recordId);
+        if (record == null)
+        {
+            throw new ServiceException("参数错误：考勤记录不存在", HttpStatus.BAD_REQUEST);
+        }
+        if (record.getStudentId() == null || !record.getStudentId().equals(studentId))
+        {
+            throw new ServiceException("该记录不属于当前用户", HttpStatus.FORBIDDEN);
+        }
+        if (record.getDutyId() == null)
+        {
+            throw new ServiceException("参数错误：考勤记录未关联值班", HttpStatus.BAD_REQUEST);
+        }
+        return checkOut(recordId, record.getDutyId());
     }
 
     /**

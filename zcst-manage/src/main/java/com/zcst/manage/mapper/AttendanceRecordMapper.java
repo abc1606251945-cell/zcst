@@ -81,6 +81,11 @@ public interface AttendanceRecordMapper {
      */
     public AttendanceRecord selectAttendanceRecordByDutyId(Integer dutyId);
 
+    public AttendanceRecord selectUnCheckedOutRecordByStudentAndDuty(
+        @Param("studentId") String studentId,
+        @Param("dutyId") Integer dutyId
+    );
+
     /**
      * 根据值班 ID 列表批量查询考勤记录
      * 用于批量获取多个值班的考勤情况

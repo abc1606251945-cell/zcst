@@ -78,6 +78,8 @@ public class SysUser extends BaseEntity
     /** 场馆ID */
     private Long venueId;
 
+    private String accountType;
+
     /** 部门对象 */
     @Excels({
         @Excel(name = "部门名称", targetAttr = "deptName", type = Type.EXPORT),
@@ -271,6 +273,16 @@ public class SysUser extends BaseEntity
         this.venueId = venueId;
     }
 
+    public String getAccountType()
+    {
+        return accountType;
+    }
+
+    public void setAccountType(String accountType)
+    {
+        this.accountType = accountType;
+    }
+
     public SysDept getDept()
     {
         return dept;
@@ -339,6 +351,7 @@ public class SysUser extends BaseEntity
             .append("loginDate", getLoginDate())
             .append("pwdUpdateDate", getPwdUpdateDate())
             .append("venueId", getVenueId())
+            .append("accountType", getAccountType())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

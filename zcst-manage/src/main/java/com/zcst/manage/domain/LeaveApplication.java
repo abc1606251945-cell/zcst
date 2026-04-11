@@ -153,4 +153,12 @@ public class LeaveApplication extends BaseEntity {
      * 拒绝时必须填写拒绝原因
      */
     private String approveRemark;
+
+    private Date cancelTime;
+
+    private String cancelReason;
+
+    private Date createdAt;
+
+    private Date updatedAt;
 }

@@ -1,6 +1,7 @@
 package com.zcst.manage.mapper;
 
 import com.zcst.manage.domain.DutySchedule;
+import com.zcst.manage.domain.Vo.DutyScheduleVo;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Date;
@@ -121,4 +122,11 @@ public interface DutyScheduleMapper
      * @return 可签到的值班信息列表
      */
     public List<DutySchedule> selectCurrentAvailableDuty(@Param("studentId") String studentId, @Param("currentTime") Date currentTime);
+
+    public List<DutyScheduleVo> selectStudentWeekDuty(
+        @Param("studentId") String studentId,
+        @Param("venueId") Integer venueId,
+        @Param("startTime") Date startTime,
+        @Param("endTime") Date endTime
+    );
 }

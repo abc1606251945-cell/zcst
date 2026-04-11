@@ -1,6 +1,11 @@
 package com.zcst.manage.mapper;
 
+import com.zcst.manage.domain.ShiftExchange;
+import com.zcst.manage.domain.Vo.DutyApplicationVo;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * 调班申请 Mapper 接口
@@ -19,4 +24,19 @@ public interface ShiftExchangeMapper {
      * @return 调班次数
      */
     int countByStudentIdAndMonth(@Param("studentId") String studentId, @Param("yearMonth") String yearMonth);
+
+    int insertShiftExchange(ShiftExchange shiftExchange);
+
+    ShiftExchange selectShiftExchangeById(@Param("exchangeId") Integer exchangeId);
+
+    List<DutyApplicationVo> selectMyShiftExchangeApplications(@Param("studentId") String studentId, @Param("status") String status);
+
+    DutyApplicationVo selectShiftExchangeDetail(@Param("exchangeId") Integer exchangeId, @Param("studentId") String studentId);
+
+    int cancelShiftExchange(
+        @Param("exchangeId") Integer exchangeId,
+        @Param("studentId") String studentId,
+        @Param("cancelTime") Date cancelTime,
+        @Param("cancelReason") String cancelReason
+    );
 }

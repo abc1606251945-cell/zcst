@@ -13,14 +13,39 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="startTime" column="start_time"/>
         <result property="endTime" column="end_time"/>
         <result property="remark" column="remark"/>
+        <result property="attendanceStatus" column="attendance_status"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
+    <resultMap type="com.zcst.manage.domain.Vo.DutyScheduleVo" id="DutyScheduleVoResult" extends="DutyScheduleResult">
+        <result property="venueName" column="venue_name"/>
+        <result property="recordId" column="record_id"/>
+        <result property="checkInTime" column="check_in_time"/>
+        <result property="checkOutTime" column="check_out_time"/>
+    </resultMap>
+
     <sql id="selectDutyScheduleVo">
-        select ds.duty_id, ds.student_id, s.name as student_name, s.gender, s.phone as student_phone, ds.venue_id, ds.start_time, ds.end_time, ds.remark, ds.created_at, ds.updated_at
+        select ds.duty_id, ds.student_id, s.name as student_name, s.gender, s.phone as student_phone, ds.venue_id, ds.start_time, ds.end_time, ds.remark, ds.attendance_status, ds.created_at, ds.updated_at
         from duty_schedule ds
         left join student s on ds.student_id = s.student_id
+    </sql>
+
+    <sql id="selectDutyScheduleVoWithVenue">
+        select ds.duty_id, ds.student_id, s.name as student_name, s.gender, s.phone as student_phone,
+               ds.venue_id, v.venue_name, ds.start_time, ds.end_time, ds.remark, ds.attendance_status, ds.created_at, ds.updated_at,
+               ar.record_id, ar.check_in_time, ar.check_out_time
+        from duty_schedule ds
+        left join student s on ds.student_id = s.student_id
+        left join venue v on ds.venue_id = v.venue_id
+        left join attendance_record ar on ar.record_id = (
+            select ar2.record_id
+            from attendance_record ar2
+            where ar2.duty_id = ds.duty_id
+              and ar2.student_id = ds.student_id
+            order by ar2.record_id desc
+            limit 1
+        )
     </sql>
 
     <select id="selectDutyScheduleList" parameterType="com.zcst.manage.domain.DutySchedule" resultMap="DutyScheduleResult">
@@ -148,6 +173,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where ds.student_id = #{studentId}
           and ds.start_time <![CDATA[<=]]> #{currentTime}
           and ds.end_time <![CDATA[>=]]> #{currentTime}
+        order by ds.start_time asc
+    </select>
+
+    <select id="selectStudentWeekDuty" resultMap="DutyScheduleVoResult">
+        <include refid="selectDutyScheduleVoWithVenue"/>
+        <where>
+            and ds.student_id = #{studentId}
+            <if test="venueId != null">
+                and ds.venue_id = #{venueId}
+            </if>
+            and ds.start_time <![CDATA[<]]> #{endTime}
+            and ds.end_time <![CDATA[>]]> #{startTime}
+        </where>
         order by ds.start_time asc
     </select>
 </mapper>

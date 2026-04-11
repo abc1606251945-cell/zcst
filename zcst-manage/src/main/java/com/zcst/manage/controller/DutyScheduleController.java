@@ -2,19 +2,24 @@ package com.zcst.manage.controller;
 
 import com.zcst.manage.domain.DutySchedule;
 import com.zcst.manage.domain.Vo.AvailableStudentVo;
+import com.zcst.manage.domain.Vo.DutyScheduleVo;
 import com.zcst.manage.domain.Venue;
 import com.zcst.manage.domain.dto.AvailableStudentsDTO;
 import com.zcst.manage.domain.dto.AutoScheduleDTO;
 import com.zcst.manage.domain.dto.AutoScheduleByConfigDTO;
+import com.zcst.manage.domain.Student;
+import com.zcst.manage.mapper.StudentMapper;
 import com.zcst.manage.service.IDutyScheduleService;
 import com.zcst.manage.service.IVenueService;
 
 import com.zcst.common.core.domain.entity.SysRole;
 import com.zcst.common.core.domain.entity.SysUser;
 import com.zcst.common.annotation.Log;
+import com.zcst.common.constant.HttpStatus;
 import com.zcst.common.core.controller.BaseController;
 import com.zcst.common.core.domain.AjaxResult;
 import com.zcst.common.core.page.TableDataInfo;
+import com.zcst.common.exception.ServiceException;
 import com.zcst.common.enums.BusinessType;
 import com.zcst.common.utils.DateUtils;
 import com.zcst.common.utils.SecurityUtils;
@@ -34,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -62,6 +68,9 @@ public class DutyScheduleController extends BaseController
 
     @Autowired
     private IVenueService venueService;
+
+    @Autowired
+    private StudentMapper studentMapper;
 
     /**
      * 判断是否为超级管理员
@@ -220,6 +229,10 @@ public class DutyScheduleController extends BaseController
     {
         // 获取当前用户
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if ("student".equalsIgnoreCase(currentUser.getAccountType()))
+        {
+            throw new ServiceException("无权限查看该数据", HttpStatus.FORBIDDEN);
+        }
         
         // 非超级管理员只能查看自己场馆的值班信息
         if (!isSuperAdmin(currentUser)) {
@@ -439,21 +452,24 @@ public class DutyScheduleController extends BaseController
      * @param studentId 学号，为空时自动使用当前登录用户的学号
      * @return 可签到的值班信息列表
      */
+    @PreAuthorize("@ss.hasPermi('manage:dutySchedule:studentWeek')")
     @GetMapping("/currentDuty")
     public AjaxResult getCurrentDuty(@RequestParam(value = "studentId", required = false) String studentId)
     {
-        // 如果未指定学号，使用当前登录用户的信息
-        if (studentId == null || studentId.isEmpty()) {
-            SysUser currentUser = SecurityUtils.getLoginUser().getUser();
-            if (currentUser == null) {
-                return error("未登录或用户信息不存在");
-            }
-            studentId = currentUser.getUserName();
-            if (studentId == null || studentId.isEmpty()) {
-                return error("无法获取用户学号");
-            }
-            log.info("未指定学号，使用当前登录用户：{}", studentId);
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null) {
+            return error("未登录或用户信息不存在");
         }
+        String currentStudentId = currentUser.getUserName();
+        if (currentStudentId == null || currentStudentId.isEmpty()) {
+            return error("无法获取用户学号");
+        }
+        if (studentId != null && !studentId.isEmpty() && !studentId.equals(currentStudentId))
+        {
+            log.warn("学生越权尝试查询他人 currentDuty, userId={}, username={}, requestStudentId={}",
+                currentUser.getUserId(), currentStudentId, studentId);
+        }
+        studentId = currentStudentId;
         
         // 查询学生当前可签到的值班信息
         List<DutySchedule> currentDutyList = dutyScheduleService.selectCurrentAvailableDuty(studentId, null);
@@ -467,7 +483,93 @@ public class DutyScheduleController extends BaseController
         return success(currentDutyList);
     }
 
+    @GetMapping("/student/week")
+    @PreAuthorize("@ss.hasPermi('manage:dutySchedule:studentWeek')")
+    /**
+     * 学生端：查询某一周的值班列表（按场馆可选过滤）
+     *
+     * 取数规则：
+     * - studentId 一律取当前登录用户（userName），不信任前端传参
+     * - 时间范围：weekStart 所在周的周一 00:00:00 ~ 周日 23:59:59（服务器时区 Asia/Shanghai）
+     *
+     * canCheckIn 计算规则：
+     * - 当前时间在 startTime/endTime 之间（含边界）
+     * - 且 duty_schedule.attendance_status 为空（尚未产生考勤状态）
+     *
+     * @param weekStart 周一日期，格式 yyyy-MM-dd；为空默认本周周一
+     * @param venueId 场馆ID；<=0 或为空表示全部场馆
+     */
+    public AjaxResult getStudentWeekDuties(
+        @RequestParam(value = "weekStart", required = false) String weekStart,
+        @RequestParam(value = "venueId", required = false) Integer venueId
+    )
+    {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null) {
+            return error("未登录或用户信息不存在");
+        }
+        String studentId = currentUser.getUserName();
+        if (studentId == null || studentId.isEmpty()) {
+            return error("无法获取用户学号");
+        }
+        Long boundVenueIdLong = currentUser.getVenueId();
+        if (boundVenueIdLong == null)
+        {
+            Student me = studentMapper.selectStudentByStudentId(studentId);
+            boundVenueIdLong = me == null ? null : me.getVenueId();
+        }
+        Integer boundVenueId = boundVenueIdLong == null ? null : boundVenueIdLong.intValue();
+        if (boundVenueId == null || boundVenueId <= 0)
+        {
+            return success(new ArrayList<>());
+        }
+
+        LocalDate monday;
+        if (weekStart == null || weekStart.isEmpty()) {
+            monday = LocalDate.now(ZONE_ID).with(DayOfWeek.MONDAY);
+        } else {
+            try {
+                monday = LocalDate.parse(weekStart, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            } catch (Exception e) {
+                return error("参数错误：weekStart 格式应为 yyyy-MM-dd");
+            }
+        }
+
+        Date startTime = startOfDay(monday);
+        Date endTime = endOfDay(monday.plusDays(6));
+
+        Integer resolvedVenueId;
+        if (venueId != null && venueId > 0 && !venueId.equals(boundVenueId))
+        {
+            log.warn("学生越权尝试查询其他场馆 weekDuty, userId={}, username={}, boundVenueId={}, requestVenueId={}",
+                currentUser.getUserId(), studentId, boundVenueId, venueId);
+            return success(new ArrayList<>());
+        }
+        resolvedVenueId = boundVenueId;
+        List<DutyScheduleVo> list = new ArrayList<>(dutyScheduleService.selectStudentWeekDuty(studentId, resolvedVenueId, startTime, endTime));
+
+        Date now = new Date();
+        for (DutyScheduleVo vo : list) {
+            if (vo.getStartTime() != null) {
+                vo.setStartTimeTs(vo.getStartTime().getTime());
+            }
+            if (vo.getEndTime() != null) {
+                vo.setEndTimeTs(vo.getEndTime().getTime());
+            }
+            boolean inRange = vo.getStartTime() != null && vo.getEndTime() != null
+                && !now.before(vo.getStartTime())
+                && !now.after(vo.getEndTime());
+            boolean hasCheckIn = vo.getRecordId() != null && vo.getCheckInTime() != null;
+            boolean hasCheckOut = vo.getCheckOutTime() != null;
+            vo.setCanCheckIn(inRange && !hasCheckIn);
+            vo.setCanCheckOut(hasCheckIn && !hasCheckOut);
+        }
+        list.sort(Comparator.comparing(DutyScheduleVo::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+        return success(list);
+    }
+
     @GetMapping("/my")
+    @PreAuthorize("@ss.hasPermi('manage:dutySchedule:studentWeek')")
     public AjaxResult getMyDuties(
         @RequestParam(value = "from", required = false) String from,
         @RequestParam(value = "to", required = false) String to,

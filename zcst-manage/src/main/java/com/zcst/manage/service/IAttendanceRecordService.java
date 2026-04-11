@@ -114,6 +114,10 @@ public interface IAttendanceRecordService {
      */
     public int checkOut(Long recordId, Integer dutyId);
 
+    public int checkOutByDuty(String studentId, Integer dutyId);
+
+    public int checkOutByRecordId(String studentId, Long recordId);
+
     /**
      * 根据学生 ID 和月份查询考勤记录
      * 用于月度考勤统计

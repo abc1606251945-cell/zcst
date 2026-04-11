@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.StudentNoticeMapper">
+
+    <resultMap type="com.zcst.manage.domain.StudentNotice" id="StudentNoticeResult">
+        <id property="noticeId" column="notice_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="type" column="type"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizId" column="biz_id"/>
+        <result property="publishTime" column="publish_time"/>
+        <result property="readFlag" column="read_flag"/>
+        <result property="readTime" column="read_time"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insertStudentNotice" parameterType="com.zcst.manage.domain.StudentNotice" useGeneratedKeys="true" keyProperty="noticeId">
+        insert into student_notice
+        (student_id, title, content, type, biz_type, biz_id, publish_time, read_flag, read_time, created_at, updated_at)
+        values
+        (#{studentId}, #{title}, #{content}, #{type}, #{bizType}, #{bizId}, #{publishTime}, #{readFlag}, #{readTime}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="selectStudentNoticeList" resultMap="StudentNoticeResult">
+        select notice_id, student_id, title, content, type, biz_type, biz_id, publish_time, read_flag, read_time, created_at, updated_at
+        from student_notice
+        where student_id = #{studentId}
+        <if test="readFlag != null and readFlag != ''">
+            and read_flag = #{readFlag}
+        </if>
+        order by publish_time desc, notice_id desc
+    </select>
+
+    <select id="selectStudentNoticeById" resultMap="StudentNoticeResult">
+        select notice_id, student_id, title, content, type, biz_type, biz_id, publish_time, read_flag, read_time, created_at, updated_at
+        from student_notice
+        where notice_id = #{noticeId}
+    </select>
+
+    <select id="selectStudentNoticeByIdAndStudentId" resultMap="StudentNoticeResult">
+        select notice_id, student_id, title, content, type, biz_type, biz_id, publish_time, read_flag, read_time, created_at, updated_at
+        from student_notice
+        where notice_id = #{noticeId}
+          and student_id = #{studentId}
+    </select>
+
+    <update id="markRead">
+        update student_notice
+        set read_flag = '1',
+            read_time = #{readTime},
+            updated_at = #{readTime}
+        where notice_id = #{noticeId}
+          and student_id = #{studentId}
+          and read_flag = '0'
+    </update>
+
+    <update id="markReadAll">
+        update student_notice
+        set read_flag = '1',
+            read_time = #{readTime},
+            updated_at = #{readTime}
+        where student_id = #{studentId}
+          and read_flag = '0'
+    </update>
+
+    <select id="countUnread" resultType="int">
+        select count(*)
+        from student_notice
+        where student_id = #{studentId}
+          and read_flag = '0'
+    </select>
+
+</mapper>
