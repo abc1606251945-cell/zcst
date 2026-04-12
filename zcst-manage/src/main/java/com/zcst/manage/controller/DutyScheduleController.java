@@ -569,7 +569,7 @@ public class DutyScheduleController extends BaseController
     }
 
     @GetMapping("/my")
-    @PreAuthorize("@ss.hasPermi('manage:dutySchedule:studentWeek')")
+    @PreAuthorize("@ss.hasRole('student')")
     public AjaxResult getMyDuties(
         @RequestParam(value = "from", required = false) String from,
         @RequestParam(value = "to", required = false) String to,
