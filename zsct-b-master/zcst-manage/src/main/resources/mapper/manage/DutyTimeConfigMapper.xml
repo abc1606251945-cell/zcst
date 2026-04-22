@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.DutyTimeConfigMapper">
+    <resultMap type="com.zcst.manage.domain.DutyTimeConfig" id="DutyTimeConfigResult">
+        <id property="configId" column="config_id" />
+        <result property="venueId" column="venue_id" />
+        <result property="startTime" column="start_time" />
+        <result property="endTime" column="end_time" />
+        <result property="isEnable" column="is_enable" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <sql id="selectDutyTimeConfigVo">
+        select config_id, venue_id, start_time, end_time, is_enable, created_at, updated_at from duty_time_config
+    </sql>
+
+    <select id="selectDutyTimeConfigList" parameterType="com.zcst.manage.domain.DutyTimeConfig" resultMap="DutyTimeConfigResult">
+        <include refid="selectDutyTimeConfigVo" />
+        <where>
+            <if test="venueId != null">and venue_id = #{venueId}</if>
+            <if test="isEnable != null">and is_enable = #{isEnable}</if>
+        </where>
+        order by venue_id, start_time
+    </select>
+
+    <select id="selectDutyTimeConfigByVenueId" parameterType="Integer" resultMap="DutyTimeConfigResult">
+        <include refid="selectDutyTimeConfigVo" />
+        where venue_id = #{venueId} and is_enable = 1
+        order by start_time
+    </select>
+
+    <select id="selectDutyTimeConfigByConfigId" parameterType="Integer" resultMap="DutyTimeConfigResult">
+        <include refid="selectDutyTimeConfigVo" />
+        where config_id = #{configId}
+    </select>
+
+    <insert id="insertDutyTimeConfig" parameterType="com.zcst.manage.domain.DutyTimeConfig">
+        insert into duty_time_config (venue_id, start_time, end_time, is_enable, created_at, updated_at)
+        values (#{venueId}, #{startTime}, #{endTime}, #{isEnable}, now(), now())
+    </insert>
+
+    <update id="updateDutyTimeConfig" parameterType="com.zcst.manage.domain.DutyTimeConfig">
+        update duty_time_config
+        set venue_id = #{venueId},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            is_enable = #{isEnable},
+            updated_at = now()
+        where config_id = #{configId}
+    </update>
+
+    <delete id="deleteDutyTimeConfigByConfigId" parameterType="Integer">
+        delete from duty_time_config where config_id = #{configId}
+    </delete>
+
+    <delete id="deleteDutyTimeConfigByConfigIds" parameterType="Integer[]">
+        delete from duty_time_config where config_id in
+        <foreach item="configId" collection="configIds" open="(" separator="," close=")">
+            #{configId}
+        </foreach>
+    </delete>
+
+    <select id="countByVenueAndTime" resultType="int">
+        select count(1)
+        from duty_time_config
+        where venue_id = #{venueId}
+          and start_time = #{startTime}
+          and end_time = #{endTime}
+    </select>
+
+    <select id="countByVenueAndTimeExcludeId" resultType="int">
+        select count(1)
+        from duty_time_config
+        where config_id <![CDATA[<>]]> #{configId}
+          and venue_id = #{venueId}
+          and start_time = #{startTime}
+          and end_time = #{endTime}
+    </select>
+</mapper>
