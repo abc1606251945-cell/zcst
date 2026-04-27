@@ -85,7 +85,7 @@ spring:
       # 数据库索引
       database: 1
       # 密码
-      password: 1234
+      password: 
       # 连接超时时间
       timeout: 10s
       lettuce:
