@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.StudyRoomMapper">
+
+    <select id="selectStudyRoomOccupancy" resultType="map">
+        select
+            concat(
+                date_format(ds.start_time, '%Y-%m-%d %H:%i'),
+                '至',
+                date_format(ds.end_time, '%Y-%m-%d %H:%i')
+            ) as SYJSSJ,
+            case
+                when nullif(#{cjid}, '') is not null then #{cjid}
+                else coalesce(v.venue_name, cast(ds.venue_id as char))
+            end as CJID
+        from duty_schedule ds
+        left join venue v on ds.venue_id = v.venue_id
+        <where>
+            ds.start_time <![CDATA[<]]> #{queryEndTime}
+            and ds.end_time <![CDATA[>=]]> #{queryStartTime}
+            <if test="cjid != null and cjid != ''">
+                and (
+                    v.venue_name = #{cjid}
+                    or cast(ds.venue_id as char) = #{cjid}
+                )
+            </if>
+        </where>
+        group by SYJSSJ, CJID
+        order by min(ds.start_time) asc, CJID asc
+    </select>
+</mapper>

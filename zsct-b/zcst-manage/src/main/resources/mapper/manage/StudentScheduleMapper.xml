@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.StudentScheduleMapper">
+    <resultMap type="com.zcst.manage.domain.StudentSchedule" id="StudentScheduleResult">
+        <id property="scheduleId" column="schedule_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="location" column="location"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="selectStudentScheduleVo">
+        select schedule_id, student_id, course_name, location, start_time, end_time, created_at, updated_at
+        from student_schedule
+    </sql>
+
+    <select id="selectStudentScheduleList" parameterType="com.zcst.manage.domain.StudentSchedule" resultMap="StudentScheduleResult">
+        <include refid="selectStudentScheduleVo"/>
+        <where>
+            <if test="studentId != null and studentId != ''">
+                and student_id = #{studentId}
+            </if>
+            <if test="courseName != null and courseName != ''">
+                and course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="location != null and location != ''">
+                and location like concat('%', #{location}, '%')
+            </if>
+            <if test="startTime != null">
+                and start_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and end_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectStudentScheduleByStudentId" parameterType="string" resultMap="StudentScheduleResult">
+        <include refid="selectStudentScheduleVo"/>
+        where student_id = #{studentId}
+        order by start_time desc
+    </select>
+
+    <select id="selectStudentScheduleByTimeRange" parameterType="map" resultMap="StudentScheduleResult">
+        <include refid="selectStudentScheduleVo"/>
+        where student_id = #{studentId}
+        and (start_time &lt; #{endTime} and end_time &gt; #{startTime})
+    </select>
+
+    <select id="selectStudentScheduleByScheduleId" parameterType="integer" resultMap="StudentScheduleResult">
+        <include refid="selectStudentScheduleVo"/>
+        where schedule_id = #{scheduleId}
+    </select>
+
+    <insert id="insertStudentSchedule" parameterType="com.zcst.manage.domain.StudentSchedule">
+        insert into student_schedule (student_id, course_name, location, start_time, end_time)
+        values (#{studentId}, #{courseName}, #{location}, #{startTime}, #{endTime})
+    </insert>
+
+    <update id="updateStudentSchedule" parameterType="com.zcst.manage.domain.StudentSchedule">
+        update student_schedule
+        set student_id = #{studentId},
+            course_name = #{courseName},
+            location = #{location},
+            start_time = #{startTime},
+            end_time = #{endTime}
+        where schedule_id = #{scheduleId}
+    </update>
+
+    <delete id="deleteStudentScheduleByScheduleId" parameterType="integer">
+        delete from student_schedule
+        where schedule_id = #{scheduleId}
+    </delete>
+
+    <delete id="deleteStudentScheduleByScheduleIds" parameterType="integer">
+        delete from student_schedule
+        where schedule_id in
+        <foreach item="scheduleId" collection="array" open="(" separator="," close=")">
+            #{scheduleId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteStudentScheduleByStudentId" parameterType="string">
+        delete from student_schedule
+        where student_id = #{studentId}
+    </delete>
+
+    <insert id="batchInsertStudentSchedule" parameterType="java.util.List">
+        insert into student_schedule (student_id, course_name, location, start_time, end_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.studentId}, #{item.courseName}, #{item.location}, #{item.startTime}, #{item.endTime})
+        </foreach>
+    </insert>
+</mapper>

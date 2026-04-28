@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcst.manage.mapper.ShiftExchangeMapper">
+
+    <resultMap type="com.zcst.manage.domain.ShiftExchange" id="ShiftExchangeResult">
+        <id property="exchangeId" column="exchange_id"/>
+        <result property="studentIdA" column="student_id_a"/>
+        <result property="studentNameA" column="student_name_a"/>
+        <result property="studentIdB" column="student_id_b"/>
+        <result property="studentNameB" column="student_name_b"/>
+        <result property="venueId" column="venue_id"/>
+        <result property="dutyId" column="duty_id"/>
+        <result property="exchangeReason" column="exchange_reason"/>
+        <result property="status" column="status"/>
+        <result property="approverId" column="approver_id"/>
+        <result property="approveTime" column="approve_time"/>
+        <result property="approveRemark" column="approve_remark"/>
+        <result property="studentBConfirm" column="student_b_confirm"/>
+        <result property="studentBConfirmTime" column="student_b_confirm_time"/>
+        <result property="cancelTime" column="cancel_time"/>
+        <result property="cancelReason" column="cancel_reason"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="countByStudentIdAndMonth" resultType="int">
+        select count(*) from shift_exchange
+        where (student_id_a = #{studentId} or student_id_b = #{studentId})
+        and status = '1'
+        and DATE_FORMAT(created_at, '%Y-%m') = #{yearMonth}
+    </select>
+
+    <insert id="insertShiftExchange" parameterType="com.zcst.manage.domain.ShiftExchange" useGeneratedKeys="true" keyProperty="exchangeId">
+        insert into shift_exchange
+        (student_id_a, student_name_a, student_id_b, student_name_b, venue_id, duty_id, exchange_reason, status, student_b_confirm, created_at, updated_at)
+        values
+        (#{studentIdA}, #{studentNameA}, #{studentIdB}, #{studentNameB}, #{venueId}, #{dutyId}, #{exchangeReason}, #{status}, #{studentBConfirm}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="selectShiftExchangeById" resultMap="ShiftExchangeResult">
+        select exchange_id, student_id_a, student_name_a, student_id_b, student_name_b, venue_id, duty_id, exchange_reason,
+               status, approver_id, approve_time, approve_remark, student_b_confirm, student_b_confirm_time,
+               cancel_time, cancel_reason, created_at, updated_at
+        from shift_exchange
+        where exchange_id = #{exchangeId}
+    </select>
+
+    <select id="selectMyShiftExchangeApplications" resultType="com.zcst.manage.domain.Vo.DutyApplicationVo">
+        select 'swap' as application_type,
+               se.exchange_id as id,
+               se.duty_id,
+               se.student_id_a as student_id,
+               se.student_name_a as student_name,
+               se.student_id_b as related_student_id,
+               se.student_name_b as related_student_name,
+               se.venue_id,
+               v.venue_name,
+               ds.start_time,
+               ds.end_time,
+               se.exchange_reason as reason,
+               null as proof_image,
+               case se.status
+                   when '0' then 'pending'
+                   when '3' then 'pending'
+                   when '1' then 'approved'
+                   when '2' then 'rejected'
+                   when '4' then 'cancelled'
+                   else se.status
+               end as status,
+               se.status as status_code,
+               se.approve_time,
+               se.approve_remark,
+               se.cancel_time,
+               se.cancel_reason,
+               se.created_at
+        from shift_exchange se
+        left join duty_schedule ds on se.duty_id = ds.duty_id
+        left join venue v on se.venue_id = v.venue_id
+        where se.student_id_a = #{studentId}
+        <if test="status != null and status != ''">
+            <choose>
+                <when test="status == 'pending'">and se.status in ('0','3')</when>
+                <when test="status == 'approved'">and se.status = '1'</when>
+                <when test="status == 'rejected'">and se.status = '2'</when>
+                <when test="status == 'cancelled'">and se.status = '4'</when>
+                <otherwise>and se.status = #{status}</otherwise>
+            </choose>
+        </if>
+        order by se.created_at desc
+    </select>
+
+    <select id="selectShiftExchangeDetail" resultType="com.zcst.manage.domain.Vo.DutyApplicationVo">
+        select 'swap' as application_type,
+               se.exchange_id as id,
+               se.duty_id,
+               se.student_id_a as student_id,
+               se.student_name_a as student_name,
+               se.student_id_b as related_student_id,
+               se.student_name_b as related_student_name,
+               se.venue_id,
+               v.venue_name,
+               ds.start_time,
+               ds.end_time,
+               se.exchange_reason as reason,
+               null as proof_image,
+               case se.status
+                   when '0' then 'pending'
+                   when '3' then 'pending'
+                   when '1' then 'approved'
+                   when '2' then 'rejected'
+                   when '4' then 'cancelled'
+                   else se.status
+               end as status,
+               se.status as status_code,
+               se.approve_time,
+               se.approve_remark,
+               se.cancel_time,
+               se.cancel_reason,
+               se.created_at
+        from shift_exchange se
+        left join duty_schedule ds on se.duty_id = ds.duty_id
+        left join venue v on se.venue_id = v.venue_id
+        where se.exchange_id = #{exchangeId}
+          and se.student_id_a = #{studentId}
+    </select>
+
+    <update id="cancelShiftExchange">
+        update shift_exchange
+        set status = '4',
+            cancel_time = #{cancelTime},
+            cancel_reason = #{cancelReason},
+            updated_at = #{cancelTime}
+        where exchange_id = #{exchangeId}
+          and student_id_a = #{studentId}
+          and status in ('0','3')
+    </update>
+
+</mapper>

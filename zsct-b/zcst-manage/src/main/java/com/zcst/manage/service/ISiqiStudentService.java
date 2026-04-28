@@ -1,0 +1,73 @@
+package com.zcst.manage.service;
+
+import java.util.List;
+import com.github.pagehelper.PageInfo;
+import com.zcst.manage.domain.Student;
+import com.zcst.manage.domain.Vo.StudentVo;
+
+/**
+ * 思齐馆学生管理Service接口
+ *
+ * @author zcst
+ * @date 2026-03-19
+ */
+public interface ISiqiStudentService
+{
+    /**
+     * 查询思齐馆学生管理
+     *
+     * @param studentId 思齐馆学生管理主键
+     * @return 思齐馆学生管理 VO
+     */
+    public StudentVo selectStudentByStudentId(String studentId);
+
+    /**
+     * 查询思齐馆学生管理列表
+     *
+     * @param student 思齐馆学生管理
+     * @return 思齐馆学生管理 VO 集合
+     */
+    public List<StudentVo> selectStudentList(Student student);
+
+    /**
+     * 查询思齐馆学生管理列表（带分页信息）
+     *
+     * @param student 思齐馆学生管理
+     * @param pageNum 页码
+     * @param pageSize 每页条数
+     * @return 包含分页信息的思齐馆学生管理列表
+     */
+    public PageInfo<StudentVo> selectStudentListWithPage(Student student, int pageNum, int pageSize);
+
+    /**
+     * 新增思齐馆学生管理
+     *
+     * @param student 思齐馆学生管理
+     * @return 结果
+     */
+    public int insertStudent(Student student);
+
+    /**
+     * 修改思齐馆学生管理
+     *
+     * @param student 思齐馆学生管理
+     * @return 结果
+     */
+    public int updateStudent(Student student);
+
+    /**
+     * 批量删除思齐馆学生管理
+     *
+     * @param studentIds 需要删除的思齐馆学生管理主键集合
+     * @return 结果
+     */
+    public int deleteStudentByStudentIds(String[] studentIds);
+
+    /**
+     * 删除思齐馆学生管理信息
+     *
+     * @param studentId 思齐馆学生管理主键
+     * @return 结果
+     */
+    public int deleteStudentByStudentId(String studentId);
+}
